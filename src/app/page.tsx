@@ -1,17 +1,21 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { Button, Card } from '@/components/ui';
 import TierBadge from '@/components/TierBadge';
 import { TIERS } from '@/lib/tiers';
 import { Sparkles, Palette, Lock } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
+
+const HeroViewer = dynamic(() => import('@/components/HeroViewer'), {
+  ssr: false,
+});
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Animated starfield background
+  // Static starfield background (matching the 3D viewer)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -27,66 +31,61 @@ export default function Home() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Create stars
-    const stars: Array<{ x: number; y: number; z: number; size: number }> = [];
-    const numStars = 200;
+    // Create static stars (sparse, like the viewer)
+    const stars: Array<{ x: number; y: number; size: number; opacity: number }> = [];
+    const numStars = 100; // Fewer stars for subtlety
 
     for (let i = 0; i < numStars; i++) {
       stars.push({
-        x: Math.random() * canvas.width - canvas.width / 2,
-        y: Math.random() * canvas.height - canvas.height / 2,
-        z: Math.random() * 1000,
-        size: Math.random() * 2,
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 1.5 + 0.5,
+        opacity: Math.random() * 0.5 + 0.3, // Subtle opacity
       });
     }
 
-    let animationId: number;
-    const animate = () => {
-      ctx.fillStyle = 'rgba(10, 10, 15, 0.1)';
+    const render = () => {
+      // Dark background
+      ctx.fillStyle = 'rgba(10, 10, 15, 1)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-
+      // Draw static stars
       stars.forEach((star) => {
-        // Move star towards viewer
-        star.z -= 2;
-
-        // Reset if star passes viewer
-        if (star.z <= 0) {
-          star.z = 1000;
-          star.x = Math.random() * canvas.width - canvas.width / 2;
-          star.y = Math.random() * canvas.height - canvas.height / 2;
-        }
-
-        // Project 3D to 2D
-        const x = (star.x / star.z) * 200 + centerX;
-        const y = (star.y / star.z) * 200 + centerY;
-        const size = (1 - star.z / 1000) * star.size * 2;
-
-        // Opacity based on depth
-        const opacity = 1 - star.z / 1000;
-
-        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
         ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
         ctx.fill();
       });
-
-      animationId = requestAnimationFrame(animate);
     };
 
-    animate();
+    render();
+
+    // Re-render on resize
+    const handleResize = () => {
+      resizeCanvas();
+      // Regenerate stars for new dimensions
+      stars.length = 0;
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 1.5 + 0.5,
+          opacity: Math.random() * 0.5 + 0.3,
+        });
+      }
+      render();
+    };
+
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
   return (
     <main className="min-h-screen pt-24 px-4 relative">
-      {/* Animated Starfield Background */}
+      {/* Static Starfield Background */}
       <canvas
         ref={canvasRef}
         className="fixed inset-0 -z-10 pointer-events-none"
@@ -95,19 +94,15 @@ export default function Home() {
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Hero Section */}
         <div className="text-center space-y-8 mb-24">
-          <div className="flex justify-center mb-8">
-            <Image
-              src="/parity-10-years-logo.png"
-              alt="Parity 10 Years"
-              width={400}
-              height={133}
-              priority
-              className="w-auto h-32 sm:h-40 lg:h-48 drop-shadow-2xl"
-            />
+          {/* 3D Hero Logo - Transparent Canvas */}
+          <div className="flex justify-center mb-4">
+            <div className="w-full max-w-2xl h-[400px]">
+              <HeroViewer />
+            </div>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-gradient-pink-purple">
-            Commemorative NFT Collection
+            Parity 10 Years
           </h1>
 
           <p className="text-xl text-text-muted max-w-2xl mx-auto">
