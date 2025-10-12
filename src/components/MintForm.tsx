@@ -3,28 +3,40 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, Wallet } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { Button, Input, Modal, Card } from '@/components/ui';
 import { mintFormSchema, type MintFormData } from '@/lib/validation';
 import { mintNFT, type MintResponse } from '@/lib/api';
 import TierBadge from './TierBadge';
+import EmailVerification from './EmailVerification';
 
 export default function MintForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<MintResponse | null>(null);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [sessionToken, setSessionToken] = useState('');
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm<MintFormData>({
     resolver: zodResolver(mintFormSchema),
   });
+
+  const handleEmailVerified = (email: string, token: string) => {
+    setVerifiedEmail(email);
+    setSessionToken(token);
+    setIsEmailVerified(true);
+    setValue('email', email);
+  };
 
   const onSubmit = async (data: MintFormData) => {
     setIsSubmitting(true);
@@ -35,6 +47,24 @@ export default function MintForm() {
 
       if (response.success && response.hash) {
         setSuccessData(response);
+
+        // Record mint in backend
+        await fetch('/api/mint/record', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`
+          },
+          body: JSON.stringify({
+            walletAddress: data.walletAddress,
+            collectionId: response.collectionId,
+            nftId: response.nftId,
+            hash: response.hash,
+            tier: response.tier,
+            rarity: response.rarity,
+            transactionHash: response.transactionHash
+          })
+        });
       } else {
         setError(response.error || 'Failed to mint NFT');
       }
@@ -57,49 +87,57 @@ export default function MintForm() {
     reset();
   };
 
+  // Show email verification step first
+  if (!isEmailVerified) {
+    return <EmailVerification onVerified={handleEmailVerified} />;
+  }
+
   return (
     <>
       <Card glass>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Email Input */}
-          <Input
-            label="Email Address"
-            type="email"
-            placeholder="your@email.com"
-            icon={<Mail className="w-5 h-5" />}
-            error={errors.email?.message}
-            {...register('email')}
-          />
-
-          {/* Wallet Address Input */}
-          <Input
-            label="Polkadot Wallet Address"
-            type="text"
-            placeholder="5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
-            icon={<Wallet className="w-5 h-5" />}
-            error={errors.walletAddress?.message}
-            {...register('walletAddress')}
-          />
-
-          {/* Error Message */}
-          {error && (
-            <div className="p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm">
-              {error}
+        <div className="space-y-6">
+          {/* Verified Email Badge */}
+          <div className="p-4 rounded-xl bg-parity-pink/10 border border-parity-pink/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-text-muted">Verified Email</p>
+                <p className="font-medium">{verifiedEmail}</p>
+              </div>
+              <div className="text-2xl">✓</div>
             </div>
-          )}
+          </div>
 
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            loading={isSubmitting}
-            className="w-full"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Minting...' : 'Mint NFT'}
-          </Button>
-        </form>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Wallet Address Input */}
+            <Input
+              label="Polkadot Wallet Address"
+              type="text"
+              placeholder="5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+              icon={<Wallet className="w-5 h-5" />}
+              error={errors.walletAddress?.message}
+              {...register('walletAddress')}
+            />
+
+            {/* Error Message */}
+            {error && (
+              <div className="p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              loading={isSubmitting}
+              className="w-full"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Minting...' : 'Mint NFT'}
+            </Button>
+          </form>
+        </div>
       </Card>
 
       {/* Success Modal */}
@@ -153,7 +191,7 @@ export default function MintForm() {
               onClick={handleReset}
               className="flex-1"
             >
-              Mint Another
+              Close
             </Button>
             <Button
               variant="primary"

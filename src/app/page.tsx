@@ -100,12 +100,11 @@ export default function Home() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-gradient-pink-purple">
-            Parity 10 Years
+            Ten Years of Parity
           </h1>
 
           <p className="text-xl text-text-muted max-w-2xl mx-auto">
-            Celebrate a decade of innovation with unique 3D glass logo NFTs on Polkadot.
-            Each NFT is a one-of-a-kind soulbound token.
+            Celebrate a decade of innovation with a generative art NFT on Polkadot.
           </p>
 
           <div className="flex gap-4 justify-center flex-wrap pt-4">
