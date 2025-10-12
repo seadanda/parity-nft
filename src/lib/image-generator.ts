@@ -35,17 +35,8 @@ export async function generateAndUploadImage(hash: string, nftId: number): Promi
       deviceScaleFactor: 2
     });
 
-    // Prevent rotation in the viewer
-    await page.evaluateOnNewDocument(() => {
-      Object.defineProperty(window, 'NO_ROTATION', {
-        value: true,
-        writable: false,
-        configurable: false
-      });
-    });
-
-    // Load the hash viewer (simple viewer that doesn't require database lookup)
-    const viewerUrl = `http://localhost:3000/hash-viewer/${hash}`;
+    // Load the image generator page via HTTP (served from /public)
+    const viewerUrl = `http://localhost:3000/image-gen.html?hash=${hash}`;
     console.log(`   Loading viewer: ${viewerUrl}`);
 
     await page.goto(viewerUrl, {
@@ -60,18 +51,12 @@ export async function generateAndUploadImage(hash: string, nftId: number): Promi
     // This gives enough time for: HDR load, GLB load, materials compile, bloom passes
     await new Promise(resolve => setTimeout(resolve, 3000));
 
-    // Take screenshot of the canvas element (just the 3D viewer, not the whole page)
+    // Take full page screenshot
     const imagePath = `/tmp/nft-preview-${nftId}.png`;
-    const canvasElement = await page.$('canvas');
-
-    if (!canvasElement) {
-      throw new Error('Canvas element not found');
-    }
-
-    await canvasElement.screenshot({
+    await page.screenshot({
       path: imagePath,
       type: 'png',
-      omitBackground: false
+      fullPage: false
     });
 
     console.log(`   ✅ Screenshot saved: ${imagePath}`);
