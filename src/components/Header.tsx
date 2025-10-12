@@ -41,6 +41,13 @@ export default function Header() {
                 Home
               </Link>
               <Link
+                href="/how-it-works"
+                className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
+                aria-label="Learn how the NFT system works"
+              >
+                How It Works
+              </Link>
+              <Link
                 href="/tiers"
                 className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
                 aria-label="View rarity tiers"

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button, Card } from '@/components/ui';
-import { Sparkles, Palette, Lock } from 'lucide-react';
+import { Sparkles, Mail, Eye } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 
@@ -128,42 +128,42 @@ export default function Home() {
             How It Works
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Step 1: Mint */}
+            {/* Step 1: Confirm Email */}
             <Card glass className="text-center p-8 hover:scale-105 transition-transform">
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-parity-pink to-parity-purple flex items-center justify-center">
-                  <Sparkles className="w-8 h-8 text-white" />
+                  <Mail className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold mb-4">1. Mint Your NFT</h3>
+              <h3 className="text-xl font-bold mb-4">1. Confirm Your Email</h3>
               <p className="text-text-muted">
-                Provide your email and Polkadot wallet address to mint a unique commemorative NFT on Asset Hub.
+                Confirm your email is included in the drop. Only whitelisted addresses can participate in this exclusive mint.
               </p>
             </Card>
 
-            {/* Step 2: Discover */}
+            {/* Step 2: Mint */}
             <Card glass className="text-center p-8 hover:scale-105 transition-transform">
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-parity-purple to-parity-indigo flex items-center justify-center">
-                  <Palette className="w-8 h-8 text-white" />
+                  <Sparkles className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold mb-4">2. Discover Your Tier</h3>
+              <h3 className="text-xl font-bold mb-4">2. Mint Your NFT</h3>
               <p className="text-text-muted">
-                Each NFT is assigned a rarity tier from Common to Legendary, with unique glass and glow colors.
+                Connect your Polkadot wallet and mint your unique 3D glass logo NFT. Each NFT is randomly assigned a rarity tier.
               </p>
             </Card>
 
-            {/* Step 3: Keep Forever */}
+            {/* Step 3: View */}
             <Card glass className="text-center p-8 hover:scale-105 transition-transform">
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-parity-indigo to-parity-purple flex items-center justify-center">
-                  <Lock className="w-8 h-8 text-white" />
+                  <Eye className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold mb-4">3. Keep Forever</h3>
+              <h3 className="text-xl font-bold mb-4">3. View Your NFT</h3>
               <p className="text-text-muted">
-                Your NFT is soulbound (non-transferable) and stored permanently on IPFS and Polkadot Asset Hub.
+                View your NFT on Subscan, Nova Wallet, or KodaDot. Your NFT is soulbound and stored permanently on Polkadot Asset Hub.
               </p>
             </Card>
           </div>
