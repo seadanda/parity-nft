@@ -1,4 +1,6 @@
 import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from '@/components/ui';
 
 export default function Home() {
   return (
@@ -20,19 +22,18 @@ export default function Home() {
           <p className="text-xl text-text-muted max-w-2xl mx-auto">
             Celebrate a decade of innovation with unique 3D glass logo NFTs on Polkadot
           </p>
-          <div className="flex gap-4 justify-center">
-            <a
-              href="/mint"
-              className="px-8 py-4 bg-gradient-to-r from-parity-pink to-parity-purple rounded-full font-medium hover:opacity-90 transition-opacity"
-            >
-              Mint Your NFT
-            </a>
-            <a
-              href="#tiers"
-              className="px-8 py-4 glass rounded-full font-medium hover:bg-white/10 transition-colors"
-            >
+
+          <div className="flex gap-4 justify-center flex-wrap">
+            <Link href="/mint">
+              <Button variant="primary" size="lg">
+                Mint Your NFT
+              </Button>
+            </Link>
+            <Button variant="secondary" size="lg" onClick={() => {
+              document.getElementById('tiers')?.scrollIntoView({ behavior: 'smooth' });
+            }}>
               View Tiers
-            </a>
+            </Button>
           </div>
         </div>
       </div>
