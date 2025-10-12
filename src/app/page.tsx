@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import { Button, Card } from '@/components/ui';
-import TierBadge from '@/components/TierBadge';
-import { TIERS } from '@/lib/tiers';
 import { Sparkles, Palette, Lock } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -116,15 +114,11 @@ export default function Home() {
                 Mint Your NFT
               </Button>
             </Link>
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => {
-                document.getElementById('tiers')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              View Tiers
-            </Button>
+            <Link href="/tiers">
+              <Button variant="secondary" size="lg">
+                View Tiers
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -175,41 +169,22 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Tier Showcase */}
-        <section id="tiers" className="mb-24 scroll-mt-24">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4 text-gradient-pink-purple">
-            Rarity Tiers
-          </h2>
-          <p className="text-center text-text-muted mb-12 max-w-2xl mx-auto">
-            12 unique tiers with varying rarity. Each tier features distinct glass and glow colors
-            determined by cryptographic randomness from your mint hash.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {TIERS.map((tier) => (
-              <Card
-                key={tier.name}
-                glass
-                className="p-6 hover:scale-105 transition-transform cursor-pointer"
-              >
-                <TierBadge
-                  tier={tier.name}
-                  rarity={tier.rarity}
-                  glassColor={tier.glassColor}
-                  glowColor={tier.glowColor}
-                  size="md"
-                />
-                <div className="mt-4 pt-4 border-t border-white/10">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-muted">Drop Rate</span>
-                    <span className="font-mono">
-                      {((tier.weight / TIERS.reduce((sum, t) => sum + t.weight, 0)) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+        {/* Tier Preview Card */}
+        <section className="mb-24">
+          <Card glass className="p-12 max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-gradient-pink-purple">
+              Explore Rarity Tiers
+            </h2>
+            <p className="text-xl text-text-muted mb-8">
+              12 unique tiers with varying rarity. Each tier features distinct glass and glow colors
+              determined by cryptographic randomness from your mint hash.
+            </p>
+            <Link href="/tiers">
+              <Button variant="primary" size="lg">
+                View All Tiers
+              </Button>
+            </Link>
+          </Card>
         </section>
 
         {/* CTA Section */}

@@ -27,10 +27,9 @@ export default function HeroViewer() {
     let iridescenceMesh: any;
     let animationFrameId: number;
 
-    // Configuration parameters (EXACT copy from hero.js)
     const params = {
       // Glass material properties
-      glassColor: '#000000', // Obelisk Ultra
+      glassColor: '#000000', // Obelisk
       transparency: 0.24,
       roughness: 0.236,
       metalness: 0.0,
@@ -39,7 +38,7 @@ export default function HeroViewer() {
 
       // Glow effect
       glowIntensity: 0.1,
-      glowColor: '#ed1d64', // Obelisk Ultra
+      glowColor: '#ffffff', // Obelisk
       bloomStrength: 1.4,
       bloomRadius: 0.43,
       bloomThreshold: 0.5,
@@ -125,7 +124,7 @@ export default function HeroViewer() {
 
     function loadHDREnvironment() {
       const rgbeLoader = new RGBELoader();
-      rgbeLoader.load('/royal_esplanade_4k.hdr', function (texture) {
+      rgbeLoader.load('/royal_esplanade_2k.hdr', function (texture) {
         // Use PMREM to prefilter and gently blur the environment
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         pmremGenerator.compileEquirectangularShader();
