@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+/* Parity 10 Years Design System */
+:root {
+  /* Primary Colors */
+  --parity-pink: #FF2670;
+  --parity-purple: #a855f7;
+  --parity-indigo: #6366f1;
+
+  /* Background */
+  --bg-dark: #0a0a0f;
+  --bg-card: rgba(20, 20, 31, 0.8);
+  --bg-muted: rgba(255, 255, 255, 0.05);
+
+  /* Text */
+  --text-primary: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.6);
+
+  /* Status */
+  --success: #30E000;
+  --error: #FF494A;
+  --warning: #FFD641;
+
+  /* Semantic tokens */
+  --background: var(--bg-dark);
+  --foreground: var(--text-primary);
+}
+
+@theme inline {
+  /* Custom colors */
+  --color-parity-pink: var(--parity-pink);
+  --color-parity-purple: var(--parity-purple);
+  --color-parity-indigo: var(--parity-indigo);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--bg-card);
+  --color-muted: var(--bg-muted);
+  --color-text-muted: var(--text-muted);
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-warning: var(--warning);
+
+  /* Fonts - will be set via Next.js font loading */
+  --font-unbounded: var(--font-unbounded-custom);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* Shadows */
+  --shadow-button: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0px 8px 32px rgba(0, 0, 0, 0.2);
+  --shadow-modal: 0px 16px 64px rgba(0, 0, 0, 0.4);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-unbounded);
+  font-weight: 900;
+}
+
+/* Glassmorphism utility classes */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Gradient text */
+.text-gradient-pink-purple {
+  background: linear-gradient(to right, var(--parity-pink), var(--parity-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-purple-indigo {
+  background: linear-gradient(to right, var(--parity-purple), var(--parity-indigo));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Smooth transitions */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
