@@ -7,7 +7,7 @@ import {
   logAudit,
   getWhitelistEntry
 } from '@/lib/db';
-import { sendVerificationEmail } from '@/lib/email';
+import { sendVerificationEmail, sendAlreadyMintedEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,18 +69,22 @@ export async function POST(request: NextRequest) {
     // This prevents attackers from enumerating the whitelist
 
     if (whitelisted && !minted) {
-      // Only send email if they're whitelisted AND haven't minted
+      // Send verification code if they're whitelisted AND haven't minted
       const code = createVerificationCode(email, ipAddress, userAgent);
       console.log(`[request-code] Generated code: ${code} for ${email}`);
 
       await sendVerificationEmail(email, code);
       console.log(`[request-code] Email sent to ${email}`);
       await logAudit('CODE_REQUEST', email, true, ipAddress, userAgent, 'Code sent');
+    } else if (whitelisted && minted) {
+      // Send "greedy" email if they're whitelisted but already minted
+      console.log(`[request-code] Already minted, sending greedy email`);
+      await sendAlreadyMintedEmail(email);
+      await logAudit('CODE_REQUEST', email, false, ipAddress, userAgent, 'Already minted - greedy email sent');
     } else {
-      // Not whitelisted or already minted - log but don't send email
-      const reason = !whitelisted ? 'Not whitelisted' : 'Already minted';
-      console.log(`[request-code] Not sending email: ${reason}`);
-      await logAudit('CODE_REQUEST', email, false, ipAddress, userAgent, reason);
+      // Not whitelisted - log but don't send email
+      console.log(`[request-code] Not whitelisted, not sending email`);
+      await logAudit('CODE_REQUEST', email, false, ipAddress, userAgent, 'Not whitelisted');
     }
 
     // Always return the same success response

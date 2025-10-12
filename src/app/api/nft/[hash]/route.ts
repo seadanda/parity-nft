@@ -75,15 +75,13 @@ class SeededRandom {
 
 /**
  * Convert Koda hash to seed (matching viewer's algorithm)
+ * NOTE: Uses the original hash string INCLUDING "0x" prefix
  */
 function hashToSeed(hash: string): number {
-  // Remove 0x prefix
-  const cleanHash = hash.substring(2);
-
-  // Sum 5 chunks of 12 hex characters each
+  // KodaDot's standard algorithm: sum 5 chunks of 12 chars each
   let seed = 0;
-  for (let i = 0; i < 60; i += 12) {
-    seed += parseInt(cleanHash.substring(i, i + 12), 16);
+  for (let hl = 0; hl < 60; hl = hl + 12) {
+    seed += parseInt(hash.substring(hl, hl + 12), 16);
   }
 
   return seed;
@@ -120,10 +118,11 @@ function calculateTierFromHash(hash: string): typeof TIERS[0] {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { hash: string } }
+  { params }: { params: Promise<{ hash: string }> }
 ): Promise<NextResponse<NFTMetadataResponse>> {
+  const resolvedParams = await params;
   try {
-    const { hash } = params;
+    const { hash } = resolvedParams;
 
     // Validate hash format (must be 66 characters: 0x + 64 hex)
     if (!hash || !/^0x[0-9a-fA-F]{64}$/.test(hash)) {
@@ -256,7 +255,7 @@ export async function GET(
       {
         success: false,
         nftId: '',
-        hash: params.hash || '',
+        hash: resolvedParams.hash || '',
         tier: '',
         rarity: '',
         glassColor: '',

@@ -173,6 +173,120 @@ Parity Technologies
   }
 }
 
+export async function sendAlreadyMintedEmail(email: string) {
+  const subject = 'Don\'t Be Greedy 🙈';
+  const greeting = 'Hey';
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .message-box {
+      background: linear-gradient(135deg, #e81d64 0%, #7c3aed 100%);
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      padding: 40px 20px;
+      text-align: center;
+      border-radius: 12px;
+      margin: 30px 0;
+    }
+    .footer {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 style="color: #e81d64; margin: 0;">Parity 10 Years</h1>
+    <p style="color: #666; margin: 5px 0;">NFT Mint</p>
+  </div>
+
+  <p>${greeting},</p>
+
+  <div class="message-box">
+    Don't be greedy - you've already minted yours! 🎉
+  </div>
+
+  <p>You've already claimed your Parity 10 Years NFT. Each email address can only mint one NFT.</p>
+
+  <p>Thanks for being part of Parity's 10-year journey!</p>
+
+  <div class="footer">
+    <p>Parity Technologies</p>
+    <p>10 Years of Building the Future</p>
+  </div>
+</body>
+</html>
+  `;
+
+  const textContent = `
+${greeting},
+
+Don't be greedy - you've already minted yours!
+
+You've already claimed your Parity 10 Years NFT. Each email address can only mint one NFT.
+
+Thanks for being part of Parity's 10-year journey!
+
+--
+Parity Technologies
+10 Years of Building the Future
+  `;
+
+  if (USE_RESEND && resend) {
+    const result = await resend.emails.send({
+      from: process.env.FROM_EMAIL || 'nft@parity.io',
+      to: email,
+      subject,
+      html: htmlContent,
+      text: textContent
+    });
+
+    console.log('Already minted email sent via Resend:', result);
+    return result;
+  } else {
+    const transporter = await getEtherealTransporter();
+
+    const info = await transporter.sendMail({
+      from: '"Parity 10 Years NFT" <nft@parity.io>',
+      to: email,
+      subject,
+      text: textContent,
+      html: htmlContent
+    });
+
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+
+    console.log('\n========================================');
+    console.log('📧 ALREADY MINTED EMAIL SENT');
+    console.log('========================================');
+    console.log('To:', email);
+    console.log('Preview URL:', previewUrl);
+    console.log('========================================\n');
+
+    return { messageId: info.messageId, previewUrl };
+  }
+}
+
 export async function sendMintSuccessEmail(
   email: string,
   nftId: number,

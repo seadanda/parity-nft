@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Share2, Copy, ExternalLink, Check } from 'lucide-react';
 import TierBadge from '@/components/TierBadge';
+import TierViewer from '@/components/TierViewer';
 import { Button, Card } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +27,6 @@ interface NFTViewerProps {
 export default function NFTViewer({ hash, metadata }: NFTViewerProps) {
   const [copied, setCopied] = useState<'link' | null>(null);
 
-  const viewerUrl = `http://localhost:8080/index.html?hash=${hash}`;
   const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/view/${hash}`;
 
   const truncateAddress = (address: string, startChars = 6, endChars = 4) => {
@@ -61,11 +61,11 @@ export default function NFTViewer({ hash, metadata }: NFTViewerProps) {
       {/* 3D Viewer - Takes up 2 columns on desktop */}
       <div className="lg:col-span-2">
         <Card glass className="p-0 overflow-hidden aspect-video">
-          <iframe
-            src={viewerUrl}
-            className="w-full h-full border-0"
-            title="3D NFT Viewer"
-            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+          <TierViewer
+            glassColor={metadata.glassColor}
+            glowColor={metadata.glowColor}
+            autoRotate={true}
+            loadHDR={true}
           />
         </Card>
       </div>
