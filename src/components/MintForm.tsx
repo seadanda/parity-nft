@@ -99,10 +99,6 @@ export default function MintForm() {
           >
             {isSubmitting ? 'Minting...' : 'Mint NFT'}
           </Button>
-
-          <p className="text-xs text-text-muted text-center">
-            By minting, you agree that this NFT is soulbound and cannot be transferred.
-          </p>
         </form>
       </Card>
 
