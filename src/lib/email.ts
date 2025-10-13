@@ -19,9 +19,14 @@ async function getEtherealTransporter() {
 
   // Create test account (cached)
   if (!etherealAccount) {
-    console.log('Creating Ethereal test account...');
-    etherealAccount = await nodemailer.createTestAccount();
-    console.log('Ethereal account created:', etherealAccount.user);
+    try {
+      console.log('Creating Ethereal test account...');
+      etherealAccount = await nodemailer.createTestAccount();
+      console.log('Ethereal account created:', etherealAccount.user);
+    } catch (error) {
+      console.warn('Failed to create Ethereal account, emails will be logged to console only:', error);
+      return null;
+    }
   }
 
   etherealTransporter = nodemailer.createTransport({
@@ -147,8 +152,20 @@ Parity Technologies
     console.log('Email sent via Resend:', result);
     return result;
   } else {
-    // Development: Use Ethereal
+    // Development: Use Ethereal or console fallback
     const transporter = await getEtherealTransporter();
+
+    if (!transporter) {
+      // Fallback: Just log to console
+      console.log('\n========================================');
+      console.log('📧 EMAIL (CONSOLE ONLY - Ethereal unavailable)');
+      console.log('========================================');
+      console.log('To:', email);
+      console.log('Subject:', subject);
+      console.log('Code:', code);
+      console.log('========================================\n');
+      return { messageId: 'console-only', previewUrl: null };
+    }
 
     const info = await transporter.sendMail({
       from: '"10 Years of Parity NFT" <nft@parity.io>',
@@ -265,6 +282,16 @@ Parity Technologies
     return result;
   } else {
     const transporter = await getEtherealTransporter();
+
+    if (!transporter) {
+      console.log('\n========================================');
+      console.log('📧 ALREADY MINTED EMAIL (CONSOLE ONLY)');
+      console.log('========================================');
+      console.log('To:', email);
+      console.log('Subject:', subject);
+      console.log('========================================\n');
+      return { messageId: 'console-only', previewUrl: null };
+    }
 
     const info = await transporter.sendMail({
       from: '"10 Years of Parity NFT" <nft@parity.io>',
@@ -422,6 +449,18 @@ Parity Technologies
     return result;
   } else {
     const transporter = await getEtherealTransporter();
+
+    if (!transporter) {
+      console.log('\n========================================');
+      console.log('📧 MINT SUCCESS EMAIL (CONSOLE ONLY)');
+      console.log('========================================');
+      console.log('To:', email);
+      console.log('Tier:', tier);
+      console.log('NFT ID:', nftId);
+      console.log('Subject:', subject);
+      console.log('========================================\n');
+      return { messageId: 'console-only', previewUrl: null };
+    }
 
     const info = await transporter.sendMail({
       from: '"10 Years of Parity NFT" <nft@parity.io>',
