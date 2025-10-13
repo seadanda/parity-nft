@@ -100,7 +100,6 @@ async function initializeTables() {
       image_ipfs TEXT
     )
   `);
-  await db.execute('CREATE INDEX IF NOT EXISTS idx_mints_email ON mint_records(email)');
   await db.execute('CREATE INDEX IF NOT EXISTS idx_mints_wallet ON mint_records(wallet_address)');
   await db.execute('CREATE INDEX IF NOT EXISTS idx_mints_nft ON mint_records(collection_id, nft_id)');
   await db.execute('CREATE INDEX IF NOT EXISTS idx_mints_hash ON mint_records(hash)');
@@ -160,13 +159,13 @@ export async function getWhitelistEntry(email: string) {
 
 export async function getAllWhitelist() {
   const db = getDb();
+  // Note: mint_records no longer contains email, so we can't join on it
+  // Instead, we check via sessions table if email has minted
   const result = await db.execute(`
     SELECT w.*,
-           m.nft_id,
-           m.minted_at,
-           CASE WHEN m.email IS NOT NULL THEN 1 ELSE 0 END as has_minted
+           CASE WHEN s.is_active = 0 THEN 1 ELSE 0 END as has_minted
     FROM whitelist w
-    LEFT JOIN mint_records m ON w.email = m.email
+    LEFT JOIN sessions s ON LOWER(w.email) = LOWER(s.email) AND s.is_active = 0
     ORDER BY w.added_at DESC
   `);
   return result.rows;

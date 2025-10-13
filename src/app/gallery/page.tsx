@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { Copy } from 'lucide-react';
 import { calculateTierFromHash } from '@/lib/tier-calculator';
 
 const TierViewer = dynamic(() => import('@/components/TierViewer'), {
@@ -174,7 +175,7 @@ export default function GalleryPage() {
                           glassColor={tierInfo.glassColor}
                           glowColor={tierInfo.glowColor}
                           autoRotate={true}
-                          loadHDR={false}
+                          loadHDR={true}
                           className="w-full h-full"
                         />
                       </div>
@@ -194,10 +195,10 @@ export default function GalleryPage() {
                             <p className="text-xs text-gray-500">Wallet</p>
                             <button
                               onClick={() => navigator.clipboard.writeText(nft.wallet_address)}
-                              className="text-xs text-gray-500 hover:text-pink-400 transition-colors"
+                              className="text-gray-500 hover:text-pink-400 transition-colors"
                               title="Copy address"
                             >
-                              Copy
+                              <Copy className="w-3.5 h-3.5" />
                             </button>
                           </div>
                           <a
