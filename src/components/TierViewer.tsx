@@ -15,7 +15,15 @@ interface TierViewerProps {
   loadHDR?: boolean; // Whether to load the large HDR file (default: false for performance)
   className?: string;
   tierName?: string; // Tier name for stamp
-  mintId?: number; // Mint ID for stamp
+}
+
+// DJB2 hash algorithm (from sketch-nobase64.js)
+function hashString(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+  }
+  return hash >>> 0; // Convert to unsigned 32-bit integer
 }
 
 export default function TierViewer({
@@ -24,8 +32,7 @@ export default function TierViewer({
   autoRotate = true,
   loadHDR = true,
   className = '',
-  tierName,
-  mintId
+  tierName
 }: TierViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stampCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -89,6 +96,8 @@ export default function TierViewer({
 
       // Environment
       envMapIntensity: 1.0,
+      starCount: 15000,
+      starSize: 2.0,
     };
 
     function init() {
@@ -400,39 +409,38 @@ export default function TierViewer({
 
     function createStarfield() {
       // Create a sparse outer star shell between radius 300-1000
-      const starCount = 800; // Reduced for performance in grid view
       const starVertices = [];
       const minRadius = 300;
       const maxRadius = 1000;
 
-      for (let i = 0; i < starCount; i++) {
-        // Generate random point on sphere surface, then scale to random radius
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.acos(2 * Math.random() - 1);
-        const radius = minRadius + Math.random() * (maxRadius - minRadius);
+      for (let i = 0; i < (params.starCount || 5000); i++) {
+          // Generate random point on sphere surface, then scale to random radius
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos(2 * Math.random() - 1);
+          const radius = minRadius + Math.random() * (maxRadius - minRadius);
 
-        const x = radius * Math.sin(phi) * Math.cos(theta);
-        const y = radius * Math.sin(phi) * Math.sin(theta);
-        const z = radius * Math.cos(phi);
+          const x = radius * Math.sin(phi) * Math.cos(theta);
+          const y = radius * Math.sin(phi) * Math.sin(theta);
+          const z = radius * Math.cos(phi);
 
-        starVertices.push(x, y, z);
+          starVertices.push(x, y, z);
       }
 
       const starGeometry = new THREE.BufferGeometry();
       starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
 
       const starMaterial = new THREE.PointsMaterial({
-        color: 0x555555,
-        size: 0.9,
-        transparent: true,
-        opacity: 0.8,
-        depthWrite: false
+          color: 0x555555,
+          size: params.starSize || 0.9,
+          transparent: true,
+          opacity: 0.8,
+          depthWrite: false
       });
 
       starField = new THREE.Points(starGeometry, starMaterial);
       starField.renderOrder = -1; // render behind
       scene.add(starField);
-    }
+  }
 
     function animate() {
       animationFrameId = requestAnimationFrame(animate);
@@ -498,6 +506,17 @@ export default function TierViewer({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Compute mint ID from hash (like sketch-nobase64.js)
+    const computeMintId = () => {
+      // Use tier + colors + date seed (day resolution)
+      const d = new Date();
+      const seed = `${tierName}|${glassColor}|${glowColor}|${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+      const h = hashString(seed);
+      return h.toString(16).padStart(8, '0').toUpperCase();
+    };
+
+    const mintId = computeMintId();
+
     const drawStamp = () => {
       const dpr = window.devicePixelRatio || 1;
       const container = containerRef.current;
@@ -516,7 +535,7 @@ export default function TierViewer({
       const scale = Math.min(width, height) / 600;
       const pad = 14 * scale;
       const line1 = `Tier: ${tierName}`;
-      const line2 = mintId !== undefined ? `Mint: ${mintId}` : '';
+      const line2 = `Mint: ${mintId}`;
       const line3 = `Parity • 10 Years`;
       const x = width - pad;
       const y = height - pad;
@@ -540,11 +559,9 @@ export default function TierViewer({
       ctx.fillText(line1, x, y - 40 * scale);
 
       // Mint id - scaled
-      if (line2) {
-        ctx.font = `${12 * scale}px Arial`;
-        ctx.fillStyle = 'rgba(255,255,255,0.55)';
-        ctx.fillText(line2, x, y - 60 * scale);
-      }
+      ctx.font = `${12 * scale}px Arial`;
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.fillText(line2, x, y - 60 * scale);
 
       // Reset shadow
       ctx.shadowBlur = 0;
@@ -558,7 +575,7 @@ export default function TierViewer({
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [tierName, mintId]);
+  }, [tierName, glassColor, glowColor]);
 
   return (
     <div
