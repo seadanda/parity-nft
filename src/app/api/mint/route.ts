@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateSession } from '@/lib/db';
 import { mintNFT } from '@/lib/mint';
+import { isValidPolkadotAddress, checkAccountBalance } from '@/lib/validation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,6 +34,29 @@ export async function POST(request: NextRequest) {
         { error: 'Email and wallet address are required' },
         { status: 400 }
       );
+    }
+
+    // Validate Polkadot address format (SS58 with prefix 0)
+    if (!isValidPolkadotAddress(walletAddress.trim())) {
+      return NextResponse.json(
+        { error: 'Invalid Polkadot address format' },
+        { status: 400 }
+      );
+    }
+
+    // Check account balance (>= 0.1 DOT)
+    try {
+      const balanceInfo = await checkAccountBalance(walletAddress.trim());
+      if (!balanceInfo.hasBalance) {
+        return NextResponse.json(
+          { error: `Insufficient balance. Account has ${balanceInfo.balance} DOT but needs at least 0.1 DOT` },
+          { status: 400 }
+        );
+      }
+    } catch (balanceError) {
+      console.error('Balance check failed:', balanceError);
+      // Continue with minting even if balance check fails (to avoid blocking on RPC issues)
+      console.warn('Proceeding with mint despite balance check failure');
     }
 
     // Call the minting function

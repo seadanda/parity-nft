@@ -400,7 +400,7 @@ export default function HowItWorksPage() {
                 <ul className="space-y-2 text-text-muted ml-6 list-disc">
                   <li><strong>Bob (Collection Owner)</strong> - Holds the funds and owns the collection. Private keys remain offline.</li>
                   <li><strong>Charlie (Proxy Account)</strong> - Performs minting operations on Bob's behalf via <code className="bg-background/50 px-1 rounded">proxy.proxy()</code> calls.</li>
-                  <li><strong>NonTransfer Proxy Type</strong> - Charlie can mint NFTs but cannot transfer Bob's funds.</li>
+                  <li><strong>AssetManager Proxy Type</strong> - Charlie can mint NFTs but cannot edit the collection or transfer funds.</li>
                   <li><strong>Fee Payment</strong> - All transaction fees and deposits are automatically paid by Bob.</li>
                   <li><strong>Revocability</strong> - Bob can remove Charlie's permissions instantly at any time.</li>
                 </ul>

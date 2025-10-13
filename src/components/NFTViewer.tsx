@@ -5,18 +5,24 @@ import { Share2, Copy, ExternalLink, Check } from 'lucide-react';
 import TierBadge from '@/components/TierBadge';
 import TierViewer from '@/components/TierViewer';
 import { Button, Card } from '@/components/ui';
-import { cn } from '@/lib/utils';
+import { getSubscanLink, formatHash, truncateAddress } from '@/lib/utils';
 
 interface NFTMetadata {
   nftId: string;
+  collectionId?: string;
   tier: string;
   rarity: string;
   glassColor: string;
   glowColor: string;
   ipfsImageUrl?: string;
   ipfsMetadataUrl?: string;
+  animationUrl?: string;
   owner?: string;
   transactionHash?: string;
+  attributes?: Array<{
+    trait_type: string;
+    value: string;
+  }>;
 }
 
 interface NFTViewerProps {
@@ -28,11 +34,6 @@ export default function NFTViewer({ hash, metadata }: NFTViewerProps) {
   const [copied, setCopied] = useState<'link' | null>(null);
 
   const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/view/${hash}`;
-
-  const truncateAddress = (address: string, startChars = 6, endChars = 4) => {
-    if (address.length <= startChars + endChars) return address;
-    return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
-  };
 
   const handleCopyLink = async () => {
     try {
@@ -89,57 +90,115 @@ export default function NFTViewer({ hash, metadata }: NFTViewerProps) {
         <Card glass>
           <h3 className="text-lg font-bold mb-4">NFT Details</h3>
           <div className="space-y-3">
-            {/* NFT ID */}
+            {/* NFT ID - Clickable to Subscan */}
+            {metadata.collectionId && metadata.nftId && (
+              <div>
+                <div className="text-xs text-text-muted mb-1">NFT</div>
+                <a
+                  href={getSubscanLink('nft', '', parseInt(metadata.collectionId), parseInt(metadata.nftId))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-sm text-parity-pink hover:text-parity-purple transition-colors flex items-center gap-1"
+                >
+                  #{metadata.collectionId}/{metadata.nftId}
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            )}
+
+            {/* Hash */}
             <div>
-              <div className="text-xs text-text-muted mb-1">NFT ID</div>
-              <div className="font-mono text-sm">#{metadata.nftId}</div>
+              <div className="text-xs text-text-muted mb-1">Hash</div>
+              <div className="font-mono text-xs break-all">
+                {formatHash(hash)}
+              </div>
             </div>
 
-            {/* Owner */}
+            {/* Owner - Clickable to Subscan */}
             {metadata.owner && (
               <div>
                 <div className="text-xs text-text-muted mb-1">Owner</div>
-                <div className="font-mono text-sm">
+                <a
+                  href={getSubscanLink('account', metadata.owner)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-sm text-parity-pink hover:text-parity-purple transition-colors flex items-center gap-1"
+                >
                   {truncateAddress(metadata.owner)}
-                </div>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
             )}
 
-            {/* Transaction Hash */}
+            {/* Transaction Hash - Clickable to Subscan */}
             {metadata.transactionHash && (
               <div>
                 <div className="text-xs text-text-muted mb-1">Transaction</div>
-                <div className="font-mono text-xs">
-                  {truncateAddress(metadata.transactionHash, 8, 6)}
-                </div>
+                <a
+                  href={getSubscanLink('extrinsic', metadata.transactionHash)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-xs text-parity-pink hover:text-parity-purple transition-colors flex items-center gap-1"
+                >
+                  {formatHash(metadata.transactionHash)}
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
             )}
 
-            {/* IPFS Links */}
-            {(metadata.ipfsImageUrl || metadata.ipfsMetadataUrl) && (
-              <div className="pt-3 border-t border-white/10 space-y-2">
-                {metadata.ipfsImageUrl && (
-                  <a
-                    href={metadata.ipfsImageUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between text-sm hover:text-parity-pink transition-colors"
-                  >
-                    <span>IPFS Image</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                )}
-                {metadata.ipfsMetadataUrl && (
-                  <a
-                    href={metadata.ipfsMetadataUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between text-sm hover:text-parity-pink transition-colors"
-                  >
-                    <span>IPFS Metadata</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                )}
+            {/* On-Chain & IPFS Links */}
+            <div className="pt-3 border-t border-white/10 space-y-2">
+              <div className="text-xs text-text-muted mb-2">On-Chain Metadata</div>
+
+              {metadata.animationUrl && (
+                <a
+                  href={metadata.animationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between text-sm hover:text-parity-pink transition-colors"
+                >
+                  <span>Animation URL</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+
+              {metadata.ipfsImageUrl && (
+                <a
+                  href={metadata.ipfsImageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between text-sm hover:text-parity-pink transition-colors"
+                >
+                  <span>IPFS Image</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+
+              {metadata.ipfsMetadataUrl && (
+                <a
+                  href={metadata.ipfsMetadataUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between text-sm hover:text-parity-pink transition-colors"
+                >
+                  <span>IPFS Metadata JSON</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+            </div>
+
+            {/* Attributes */}
+            {metadata.attributes && metadata.attributes.length > 0 && (
+              <div className="pt-3 border-t border-white/10">
+                <div className="text-xs text-text-muted mb-2">Attributes</div>
+                <div className="space-y-2">
+                  {metadata.attributes.map((attr, idx) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                      <span className="text-text-muted">{attr.trait_type}:</span>
+                      <span className="font-mono">{attr.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

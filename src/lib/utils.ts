@@ -39,3 +39,34 @@ export function formatDate(dateString: string): string {
     minute: '2-digit'
   }).format(date);
 }
+
+/**
+ * Generates a Subscan URL for Asset Hub Polkadot
+ * @param type - Type of link (extrinsic, block, or account)
+ * @param value - The hash/number/address to link to
+ * @returns Full Subscan URL
+ */
+export function getSubscanLink(
+  type: 'extrinsic' | 'block' | 'account' | 'nft',
+  value: string | number,
+  collectionId?: number,
+  itemId?: number
+): string {
+  const base = 'https://assethub-polkadot.subscan.io';
+
+  switch (type) {
+    case 'extrinsic':
+      return `${base}/extrinsic/${value}`;
+    case 'block':
+      return `${base}/block/${value}`;
+    case 'account':
+      return `${base}/account/${value}`;
+    case 'nft':
+      if (collectionId !== undefined && itemId !== undefined) {
+        return `${base}/nft/${collectionId}/${itemId}`;
+      }
+      return base;
+    default:
+      return base;
+  }
+}

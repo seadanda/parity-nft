@@ -291,7 +291,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
         if (mintSuccess && proxySuccess) {
           // Record mint in database
           try {
-            recordMint(
+            await recordMint(
               email,
               recipientAddress,
               COLLECTION_ID,

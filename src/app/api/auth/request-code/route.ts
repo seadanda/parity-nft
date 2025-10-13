@@ -29,30 +29,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting - email
-    const emailRateLimit = checkRateLimit(email.toLowerCase(), 'email', 'request_code', 3, 60 * 60 * 1000);
-    if (!emailRateLimit.allowed) {
-      await logAudit('CODE_REQUEST', email, false, ipAddress, userAgent, 'Rate limited');
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'RATE_LIMITED',
-          message: 'Too many requests. Please try again later.',
-          canRetryAt: emailRateLimit.lockedUntil
-        },
-        { status: 429 }
-      );
-    }
-
-    // Rate limiting - IP
-    const ipRateLimit = checkRateLimit(ipAddress, 'ip', 'request_code', 10, 60 * 60 * 1000);
+    // Rate limiting - IP only (to prevent abuse)
+    // Allow up to 20 code requests per hour per IP
+    // NOTE: No per-email rate limit - users can request new codes freely
+    //       Old codes are automatically invalidated (see createVerificationCode in db.ts)
+    const ipRateLimit = await checkRateLimit(ipAddress, 'ip', 'request_code', 20, 60 * 60 * 1000);
     if (!ipRateLimit.allowed) {
       await logAudit('CODE_REQUEST', email, false, ipAddress, userAgent, 'IP rate limited');
       return NextResponse.json(
         {
           success: false,
           error: 'RATE_LIMITED',
-          message: 'Too many requests from your IP. Please try again later.',
+          message: 'Too many requests from your network. Please try again in an hour.',
           canRetryAt: ipRateLimit.lockedUntil
         },
         { status: 429 }
@@ -60,8 +48,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check whitelist and mint status
-    const whitelisted = isEmailWhitelisted(email);
-    const minted = whitelisted ? hasEmailMinted(email) : false;
+    const whitelisted = await isEmailWhitelisted(email);
+    const minted = whitelisted ? await hasEmailMinted(email) : false;
 
     console.log(`[request-code] Email: ${email}, Whitelisted: ${whitelisted}, Minted: ${minted}`);
 
@@ -70,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     if (whitelisted && !minted) {
       // Send verification code if they're whitelisted AND haven't minted
-      const code = createVerificationCode(email, ipAddress, userAgent);
+      const code = await createVerificationCode(email, ipAddress, userAgent);
       console.log(`[request-code] Generated code: ${code} for ${email}`);
 
       await sendVerificationEmail(email, code);

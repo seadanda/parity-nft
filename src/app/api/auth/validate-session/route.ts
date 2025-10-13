@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const session = validateSession(token);
+    const session = await validateSession(token);
 
     if (!session) {
       return NextResponse.json(
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if already minted
-    const minted = hasEmailMinted(session.email);
+    const minted = await hasEmailMinted(session.email);
 
     return NextResponse.json({
       success: true,

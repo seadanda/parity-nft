@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting - max 5 attempts per email
-    const rateLimit = checkRateLimit(email.toLowerCase(), 'email', 'verify_code', 5, 60 * 60 * 1000);
+    // Rate limiting - max 5 attempts per email per hour
+    const rateLimit = await checkRateLimit(email.toLowerCase(), 'email', 'verify_code', 5, 60 * 60 * 1000);
     if (!rateLimit.allowed) {
       await logAudit('CODE_VERIFY', email, false, ipAddress, userAgent, 'Too many attempts');
       return NextResponse.json(
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the code
-    const isValid = verifyCode(email, code);
+    const isValid = await verifyCode(email, code);
 
     if (!isValid) {
       await logAudit('CODE_VERIFY', email, false, ipAddress, userAgent, 'Invalid code');
@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create session
-    const sessionToken = createSession(email, ipAddress, userAgent);
-    const whitelistEntry = getWhitelistEntry(email);
+    const sessionToken = await createSession(email, ipAddress, userAgent);
+    const whitelistEntry = await getWhitelistEntry(email);
 
     await logAudit('CODE_VERIFY', email, true, ipAddress, userAgent, 'Session created');
 

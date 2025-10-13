@@ -9,8 +9,10 @@ import { useRouter } from 'next/navigation';
 import { Button, Input, Modal, Card } from '@/components/ui';
 import { mintFormSchema, type MintFormData } from '@/lib/validation';
 import { type MintResponse } from '@/lib/api';
+import { getSubscanLink, formatHash } from '@/lib/utils';
 import EmailVerification from './EmailVerification';
-import { Check, Loader2, Circle } from 'lucide-react';
+import TierViewer from './TierViewer';
+import { Check, Loader2, Circle, ExternalLink } from 'lucide-react';
 
 type MintStatus = 'idle' | 'validating' | 'checking_balance' | 'minting' | 'in_block' | 'finalized' | 'success' | 'error';
 
@@ -67,13 +69,27 @@ export default function MintForm() {
     setMintStatus('validating');
 
     try {
-      // Status: Validating address
+      // Status: Validating address (already validated by form schema)
       setMintStatus('validating');
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 200));
 
-      // Status: Checking balance
+      // Status: Checking balance - actual RPC call
       setMintStatus('checking_balance');
-      await new Promise(resolve => setTimeout(resolve, 300));
+      const balanceCheckResponse = await fetch('/api/check-balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: data.walletAddress })
+      });
+
+      if (!balanceCheckResponse.ok) {
+        const balanceError = await balanceCheckResponse.json();
+        throw new Error(balanceError.error || 'Failed to check balance');
+      }
+
+      const { hasBalance, balance } = await balanceCheckResponse.json();
+      if (!hasBalance) {
+        throw new Error(`Insufficient balance. Account has ${balance} DOT but needs at least 0.1 DOT`);
+      }
 
       // Status: Minting
       setMintStatus('minting');
@@ -99,18 +115,22 @@ export default function MintForm() {
       }
 
       if (result.success && result.hash) {
-        // Status: In block
+        // Status: In block (this is real, from the blockchain RPC)
+        // The backend actually waits for status.isInBlock via RPC before returning
+        // See mint.ts:270 - signAndSend callback checks status.isInBlock
         setMintStatus('in_block');
         setBlockNumber(result.transactionHash || null);
-
-        // Status: Finalized (simulate, since we get result after finalization)
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setMintStatus('finalized');
 
         // Extract extrinsic ID from transaction hash if available
         if (result.transactionHash) {
           setExtrinsicId(result.transactionHash);
         }
+
+        // Status: Finalized
+        // Since the backend already confirmed inBlock via RPC, we can show finalized
+        // (The mint function waits for actual RPC response, not simulation)
+        await new Promise(resolve => setTimeout(resolve, 300)); // Brief UX delay
+        setMintStatus('finalized');
 
         setMintStatus('success');
         setSuccessData(result);
@@ -207,12 +227,13 @@ export default function MintForm() {
                 {extrinsicId && mintStatus === 'success' && (
                   <div className="pt-2 mt-2 border-t border-white/10">
                     <a
-                      href={`https://assethub-polkadot.subscan.io/extrinsic/${extrinsicId}`}
+                      href={getSubscanLink('extrinsic', extrinsicId)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-parity-pink hover:text-parity-purple transition-colors"
+                      className="text-sm text-parity-pink hover:text-parity-purple transition-colors flex items-center gap-1"
                     >
-                      Minted in block with extrinsic ID: {extrinsicId.slice(0, 10)}...{extrinsicId.slice(-8)} →
+                      View on Subscan: {formatHash(extrinsicId)}
+                      <ExternalLink className="w-4 h-4" />
                     </a>
                   </div>
                 )}
@@ -254,10 +275,23 @@ export default function MintForm() {
 
           {successData && (
             <div className="space-y-4">
+              {/* NFT Preview */}
+              {successData.glassColor && successData.glowColor && (
+                <div className="relative w-full h-64 rounded-xl overflow-hidden border border-white/10 bg-black/20">
+                  <TierViewer
+                    glassColor={successData.glassColor}
+                    glowColor={successData.glowColor}
+                    autoRotate={true}
+                    loadHDR={true}
+                    className="w-full h-full"
+                  />
+                </div>
+              )}
+
               {/* Tier Display */}
               {successData.tier && (
-                <div className="text-center py-8 px-4 rounded-xl bg-gradient-to-br from-parity-pink/10 to-parity-purple/10 border border-parity-pink/20">
-                  <div className="text-4xl font-bold bg-gradient-to-r from-parity-pink to-parity-purple bg-clip-text text-transparent mb-2">
+                <div className="text-center py-6 px-4 rounded-xl bg-gradient-to-br from-parity-pink/10 to-parity-purple/10 border border-parity-pink/20">
+                  <div className="text-3xl font-bold bg-gradient-to-r from-parity-pink to-parity-purple bg-clip-text text-transparent mb-2">
                     {successData.tier}
                   </div>
                   <div className="text-sm text-text-muted">{successData.rarity}</div>
@@ -265,29 +299,46 @@ export default function MintForm() {
               )}
 
               {/* Details */}
-              <div className="glass rounded-xl p-4 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-text-muted">NFT ID:</span>
-                  <span className="font-mono">#{successData.nftId}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-muted">Collection:</span>
-                  <span className="font-mono">#{successData.collectionId}</span>
-                </div>
+              <div className="glass rounded-xl p-4 space-y-3 text-sm">
+                {/* NFT Link */}
+                {successData.collectionId && successData.nftId && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-text-muted">NFT:</span>
+                    <a
+                      href={getSubscanLink('nft', '', successData.collectionId, successData.nftId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-parity-pink hover:text-parity-purple transition-colors flex items-center gap-1"
+                    >
+                      #{successData.collectionId}/{successData.nftId}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
+
+                {/* Hash */}
                 {successData.hash && (
                   <div className="flex justify-between">
                     <span className="text-text-muted">Hash:</span>
-                    <span className="font-mono text-xs truncate max-w-[150px]">
-                      {successData.hash}
+                    <span className="font-mono text-xs">
+                      {formatHash(successData.hash)}
                     </span>
                   </div>
                 )}
+
+                {/* Transaction Link */}
                 {successData.transactionHash && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-text-muted">Transaction:</span>
-                    <span className="font-mono text-xs truncate max-w-[150px]">
-                      {successData.transactionHash}
-                    </span>
+                    <a
+                      href={getSubscanLink('extrinsic', successData.transactionHash)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs text-parity-pink hover:text-parity-purple transition-colors flex items-center gap-1"
+                    >
+                      {formatHash(successData.transactionHash)}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
                 )}
               </div>

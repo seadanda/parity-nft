@@ -26,6 +26,7 @@ interface MintedNFT {
 interface NFTMetadataResponse {
   success: boolean;
   nftId: string;
+  collectionId: number;
   hash: string;
   tier: string;
   rarity: string;
@@ -33,8 +34,13 @@ interface NFTMetadataResponse {
   glowColor: string;
   ipfsImageUrl: string;
   ipfsMetadataUrl: string;
+  animationUrl?: string;
   owner: string;
   transactionHash?: string;
+  attributes?: Array<{
+    trait_type: string;
+    value: string;
+  }>;
   error?: string;
 }
 
@@ -229,6 +235,7 @@ export async function GET(
     const response: NFTMetadataResponse = {
       success: true,
       nftId: nftData.nftId.toString(),
+      collectionId: nftData.collection,
       hash: nftData.hash,
       tier: tierInfo.name,
       rarity: tierInfo.rarity,
@@ -236,8 +243,10 @@ export async function GET(
       glowColor: tierInfo.glowColor,
       ipfsImageUrl: nftData.metadataJson?.image || '',
       ipfsMetadataUrl: nftData.metadataIpfs || '',
+      animationUrl: nftData.metadataJson?.animation_url || '',
       owner: nftData.owner,
-      transactionHash: nftData.transactionHash
+      transactionHash: nftData.transactionHash,
+      attributes: nftData.metadataJson?.attributes || []
     };
 
     // Add CORS headers for local development

@@ -6,6 +6,7 @@ export interface MintResponse {
   success: boolean;
   hash?: string;
   nftId?: number;
+  collectionId?: number;
   tier?: string;
   rarity?: string;
   glassColor?: string;
@@ -19,14 +20,21 @@ export interface MintResponse {
 export interface NFTMetadata {
   hash: string;
   nftId: number;
+  collectionId?: number;
   tier: string;
   rarity: string;
   glassColor: string;
   glowColor: string;
   owner: string;
-  mintedAt: string;
+  mintedAt?: string;
   imageUrl: string;
   metadataUrl: string;
+  animationUrl?: string;
+  transactionHash?: string;
+  attributes?: Array<{
+    trait_type: string;
+    value: string;
+  }>;
 }
 
 export async function mintNFT(data: MintFormData): Promise<MintResponse> {

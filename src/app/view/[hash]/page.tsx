@@ -97,13 +97,17 @@ export default function ViewNFTPage() {
           hash={hash}
           metadata={{
             nftId: metadata.nftId.toString(),
+            collectionId: metadata.collectionId?.toString(),
             tier: metadata.tier,
             rarity: metadata.rarity,
             glassColor: metadata.glassColor,
             glowColor: metadata.glowColor,
             ipfsImageUrl: metadata.imageUrl,
             ipfsMetadataUrl: metadata.metadataUrl,
+            animationUrl: metadata.animationUrl,
             owner: metadata.owner,
+            transactionHash: metadata.transactionHash,
+            attributes: metadata.attributes,
           }}
         />
 
