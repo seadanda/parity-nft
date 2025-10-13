@@ -3,7 +3,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { getDb, addToWhitelist } from '../frontend/src/lib/db';
+import { getDb, addToWhitelist } from '../src/lib/db';
 
 const WHITELIST_FILE = path.join(process.cwd(), 'whitelist');
 
@@ -30,15 +30,16 @@ async function importWhitelist() {
     const email = normalizeEmail(line);
 
     try {
-      addToWhitelist(email, undefined, 'Core Team', 'Imported from whitelist file');
+      await addToWhitelist(email, undefined, 'Core Team', 'Imported from whitelist file');
       console.log(`✅ Added: ${email}`);
       imported++;
-    } catch (err: any) {
-      if (err?.code === 'SQLITE_CONSTRAINT') {
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
+      if (error?.code === 'SQLITE_CONSTRAINT') {
         console.log(`⏭️  Skipped (already exists): ${email}`);
         skipped++;
       } else {
-        console.error(`❌ Error adding ${email}:`, err.message);
+        console.error(`❌ Error adding ${email}:`, error.message || String(err));
         errors++;
       }
     }

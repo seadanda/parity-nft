@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const session = validateSession(token);
+    const session = await validateSession(token);
 
     if (!session) {
       return NextResponse.json(
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if already minted
-    if (hasEmailMinted(session.email)) {
+    if (await hasEmailMinted(session.email)) {
       await logAudit('MINT_RECORD', session.email, false, ipAddress, userAgent, 'Already minted');
       return NextResponse.json(
         {
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Record the mint
-    recordMint(
+    await recordMint(
       session.email,
       walletAddress,
       collectionId,
