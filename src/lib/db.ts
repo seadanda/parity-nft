@@ -14,7 +14,7 @@ function getDb(): Client {
     if (!url) {
       // Fallback to local SQLite for development
       db = createClient({
-        url: 'file:../data/whitelist.sqlite'
+        url: 'file:./data/whitelist.sqlite'
       });
     } else {
       // Use Turso (or remote libsql)

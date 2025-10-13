@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "node scripts/seed-whitelist.js",
+    "db:reset": "node scripts/seed-whitelist.js --reset",
+    "whitelist:import": "tsx scripts/import-whitelist.ts",
+    "test:email": "tsx scripts/test-email-flow.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -39,6 +43,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }
