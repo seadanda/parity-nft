@@ -1,68 +1,10 @@
 import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
 import crypto from 'crypto';
-import { uploadJson } from 'pinata';
+import { uploadJson, uploadFile } from 'pinata';
 import { isEmailWhitelisted, hasEmailMinted, recordMint } from './db';
-
-// Tier definitions - MUST match sketch-nobase64.js exactly for deterministic generation
-const TIERS = [
-  { name: 'Silver', weight: 8, rarity: 'Uncommon', glassColor: '#ffffff', glowColor: '#ffffff' },
-  { name: 'Graphite', weight: 20, rarity: 'Common', glassColor: '#2b2f36', glowColor: '#7a8899' },
-  { name: 'Bronze', weight: 12, rarity: 'Common', glassColor: '#cd7f32', glowColor: '#755b5b' },
-  { name: 'Copper', weight: 8, rarity: 'Uncommon', glassColor: '#e81308', glowColor: '#be8a46' },
-  { name: 'Emerald', weight: 5, rarity: 'Rare', glassColor: '#17a589', glowColor: '#66ffc8' },
-  { name: 'Sapphire', weight: 3, rarity: 'Very Rare', glassColor: '#1f5fff', glowColor: '#66a3ff' },
-  { name: 'Green', weight: 3, rarity: 'Very Rare', glassColor: '#005908', glowColor: '#ddffdd' },
-  { name: 'Ruby', weight: 2, rarity: 'Ultra Rare', glassColor: '#dc5e85', glowColor: '#ff6f91' },
-  { name: 'Gold', weight: 1.5, rarity: 'Ultra Rare', glassColor: '#ffd700', glowColor: '#ffe680' },
-  { name: 'Magenta', weight: 0.5, rarity: 'Legendary', glassColor: '#ff00a8', glowColor: '#ff66cc' },
-  { name: 'Obelisk', weight: 0.5, rarity: 'Legendary', glassColor: '#000000', glowColor: '#ffffff' },
-  { name: 'Obelisk Ultra', weight: 0.5, rarity: 'Legendary', glassColor: '#000000', glowColor: '#ed1d64' }
-];
-
-// Seeded random number generator (Mulberry32)
-class SeededRandom {
-  seed: number;
-
-  constructor(seed: number) {
-    this.seed = seed;
-  }
-
-  next(): number {
-    let t = this.seed += 0x6D2B79F5;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  }
-}
-
-// Convert Koda hash to seed - MUST match staging/sketch.js EXACTLY
-function hashToSeed(hash: string): number {
-  // KodaDot's standard algorithm: sum 5 chunks of 12 chars each
-  // NOTE: Uses the original hash string INCLUDING "0x" prefix
-  let seed = 0;
-  for (let hl = 0; hl < 60; hl = hl + 12) {
-    seed += parseInt(hash.substring(hl, hl + 12), 16);
-  }
-  return seed;
-}
-
-// Calculate tier from hash
-function calculateTierFromHash(hash: string) {
-  const seed = hashToSeed(hash);
-  const rng = new SeededRandom(seed);
-  const totalWeight = TIERS.reduce((sum, tier) => sum + tier.weight, 0);
-  const roll = rng.next() * totalWeight;
-  let accumulator = 0;
-
-  for (const tier of TIERS) {
-    accumulator += tier.weight;
-    if (roll <= accumulator) {
-      return tier;
-    }
-  }
-
-  return TIERS[0];
-}
+import { calculateTierFromHash } from './tier-calculator';
+import fs from 'fs';
+import path from 'path';
 
 interface MintConfig {
   COLLECTION_ID?: number;
@@ -217,9 +159,47 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   const hash = '0x' + crypto.createHash('sha256').update(hashInput).digest('hex');
   const tierInfo = calculateTierFromHash(hash);
 
-  // Use static tier preview image (no Puppeteer needed)
-  // Images are stored in /public/tier-images/{tier-name}.png
-  const imageUrl = `/tier-images/${tierInfo.name.toLowerCase().replace(/ /g, '-')}.png`;
+  // Upload tier image to IPFS
+  const tierImageFilename = `${tierInfo.name.toLowerCase().replace(/ /g, '-')}.png`;
+  const tierImagePath = path.join(process.cwd(), 'public', 'tier-images', tierImageFilename);
+
+  console.log('Uploading tier image to IPFS:', tierImageFilename);
+
+  let imageIpfsUrl = '';
+  try {
+    if (fs.existsSync(tierImagePath)) {
+      const imageFile = new File(
+        [fs.readFileSync(tierImagePath)],
+        tierImageFilename,
+        { type: 'image/png' }
+      );
+
+      const pinataConfig = { pinataJwt: PINATA_JWT };
+      const groupIdEnv = process.env.PINATA_GROUP_ID;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const groupId = groupIdEnv && uuidRegex.test(groupIdEnv) ? groupIdEnv : undefined;
+
+      const imageUpload = await uploadFile(
+        pinataConfig,
+        imageFile,
+        'public',
+        {
+          metadata: {
+            name: `parity-10y-${tierInfo.name.toLowerCase()}-preview.png`
+          },
+          ...(groupId && { groupId })
+        }
+      );
+
+      imageIpfsUrl = `ipfs://${imageUpload.cid}`;
+      console.log('Image uploaded to IPFS:', imageIpfsUrl);
+    } else {
+      console.warn('Tier image not found, skipping image upload:', tierImagePath);
+    }
+  } catch (imageError) {
+    console.error('Failed to upload tier image to IPFS:', imageError);
+    // Continue without image - animation_url is primary content
+  }
 
   // Create metadata
   const animationUrl = `ipfs://QmcPqw25RfDdqUvSgVC4sxvXsy43dA2sCRSDAyKx1UPTqa/index.html?hash=${hash}`;
@@ -229,14 +209,15 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
     name: string;
     description: string;
     animation_url: string;
-    image?: string;
+    image: string;
     attributes: Array<{ trait_type: string; value: string }>;
   }
 
   const jsonMetadata: NFTMetadata = {
-    name: `10 years of Parity ${tierInfo.name}`,
+    name: `10 Years of Parity ${tierInfo.name}`,
     description: "Celebrating Parity's 10 year anniversary with a generative NFT collection",
     animation_url: animationUrl,
+    image: imageIpfsUrl, // IPFS URL for tier preview image
     attributes: [
       { trait_type: "ID", value: nextId.toString() },
       { trait_type: "Hash", value: hash },
@@ -244,11 +225,6 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
       { trait_type: "Rarity", value: tierInfo.rarity }
     ]
   };
-
-  // Only include image if we have one
-  if (imageUrl) {
-    jsonMetadata.image = imageUrl;
-  }
 
   // Upload metadata to Pinata
   const pinataConfig = { pinataJwt: PINATA_JWT };
@@ -337,7 +313,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
             rarity: tierInfo.rarity,
             glassColor: tierInfo.glassColor,
             glowColor: tierInfo.glowColor,
-            imageUrl,
+            imageUrl: imageIpfsUrl,
             metadataUrl: metadata,
             transactionHash: status.asInBlock.toHex(),
             collectionId: COLLECTION_ID
@@ -371,5 +347,3 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   await api.disconnect();
   return result;
 }
-
-export { TIERS, calculateTierFromHash };

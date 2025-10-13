@@ -418,7 +418,7 @@ export async function sendMintSuccessEmail(
   <p>Your unique 3D glass Parity logo is ready to view:</p>
 
   <div class="links" style="text-align: center;">
-    <a href="${viewerUrl}" class="button">View 3D NFT</a>
+    <a href="${viewerUrl}" class="button">View Fullsize NFT</a>
     <a href="${subscanUrl}" class="button">View on Subscan</a>
   </div>
 

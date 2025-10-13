@@ -1,132 +1,153 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
-import { Card, Button } from '@/components/ui';
-import NFTViewer from '@/components/NFTViewer';
-import { getNFTMetadata, NFTMetadata } from '@/lib/api';
-import { Loader2, AlertCircle } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { calculateTierFromHash } from '@/lib/tier-calculator';
+
+const TierViewer = dynamic(() => import('@/components/TierViewer'), {
+  ssr: false,
+});
 
 export default function ViewNFTPage() {
   const params = useParams();
-  const hash = params.hash as string;
+  let hash = params.hash as string;
 
-  const [metadata, setMetadata] = useState<NFTMetadata | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!hash) {
-      setError('Invalid NFT hash');
-      setLoading(false);
-      return;
-    }
-
-    const fetchMetadata = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getNFTMetadata(hash);
-        setMetadata(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load NFT metadata');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMetadata();
-  }, [hash]);
-
-  // Loading State
-  if (loading) {
-    return (
-      <main className="min-h-screen pt-24 px-4">
-        <div className="max-w-7xl mx-auto">
-          <Card className="flex flex-col items-center justify-center min-h-[400px]">
-            <Loader2 className="h-12 w-12 animate-spin text-parity-pink mb-4" />
-            <p className="text-xl text-text-muted">Loading NFT metadata...</p>
-          </Card>
-        </div>
-      </main>
-    );
+  // Normalize hash - add 0x prefix if missing
+  if (hash && !hash.startsWith('0x')) {
+    hash = '0x' + hash;
   }
 
-  // Error State
-  if (error || !metadata) {
-    return (
-      <main className="min-h-screen pt-24 px-4">
-        <div className="max-w-7xl mx-auto">
-          <Card className="flex flex-col items-center justify-center min-h-[400px]">
-            <AlertCircle className="h-12 w-12 text-error mb-4" />
-            <h2 className="text-2xl font-bold mb-2">NFT Not Found</h2>
-            <p className="text-text-muted mb-8">
-              {error || 'The requested NFT could not be found.'}
-            </p>
-            <Link href="/mint">
-              <Button variant="primary">Mint a New NFT</Button>
-            </Link>
-          </Card>
-        </div>
-      </main>
-    );
-  }
+  // Validate hash format
+  const isValidHash = hash && /^0x[0-9a-fA-F]{64}$/.test(hash);
 
-  // Success State
-  return (
-    <main className="min-h-screen pt-24 px-4 pb-12">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="mb-4">
-              ← Back to Home
-            </Button>
-          </Link>
-          <h1 className="text-4xl sm:text-5xl font-bold mb-2 text-gradient-pink-purple">
-            NFT Details
-          </h1>
-          <p className="text-text-muted">
-            10 Years of Parity Anniversary Collection
+  if (!isValidHash) {
+    return (
+      <div className="relative min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-red-400 mb-4">Invalid Hash</h1>
+          <p className="text-gray-400">
+            Expected 64-character hex hash (with or without 0x prefix)
           </p>
         </div>
+      </div>
+    );
+  }
 
-        {/* NFTViewer Component */}
-        <NFTViewer
-          hash={hash}
-          metadata={{
-            nftId: metadata.nftId.toString(),
-            collectionId: metadata.collectionId?.toString(),
-            tier: metadata.tier,
-            rarity: metadata.rarity,
-            glassColor: metadata.glassColor,
-            glowColor: metadata.glowColor,
-            ipfsImageUrl: metadata.imageUrl,
-            ipfsMetadataUrl: metadata.metadataUrl,
-            animationUrl: metadata.animationUrl,
-            owner: metadata.owner,
-            transactionHash: metadata.transactionHash,
-            attributes: metadata.attributes,
-          }}
-        />
+  // Calculate tier from hash (deterministic - no database needed)
+  const tierInfo = calculateTierFromHash(hash);
+  const COLLECTION_ID = parseInt(process.env.NEXT_PUBLIC_COLLECTION_ID || '669');
 
-        {/* Actions */}
-        <div className="flex gap-4 justify-center mt-8">
-          <Link href="/mint">
-            <Button variant="primary" size="lg">
-              Mint Another NFT
-            </Button>
-          </Link>
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={() => window.location.reload()}
-          >
-            Refresh
-          </Button>
+  return (
+    <div className="relative min-h-screen bg-[#0a0a0f]">
+      {/* Content */}
+      <div className="relative z-10 pt-24 pb-12 px-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Main Viewer */}
+          <div className="overflow-hidden mb-8">
+            <div className="aspect-square max-w-3xl mx-auto">
+              <TierViewer
+                glassColor={tierInfo.glassColor}
+                glowColor={tierInfo.glowColor}
+                autoRotate={true}
+                loadHDR={true}
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+
+          {/* Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {/* Tier Info */}
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg p-6">
+              <h3 className="text-sm text-gray-500 uppercase tracking-wider mb-4">
+                Tier Details
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-gray-500">Tier</p>
+                  <p className="text-lg font-semibold text-white">{tierInfo.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Rarity</p>
+                  <p className="text-lg font-semibold text-white">{tierInfo.rarity}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Collection</p>
+                  <p className="text-lg font-mono text-white">#{COLLECTION_ID}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Hash Info */}
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg p-6">
+              <h3 className="text-sm text-gray-500 uppercase tracking-wider mb-4">
+                Hash
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Deterministic ID</p>
+                  <p className="text-sm font-mono text-gray-300 break-all">
+                    {hash}
+                  </p>
+                </div>
+                <div className="pt-3 border-t border-gray-700">
+                  <p className="text-xs text-gray-400 italic">
+                    This NFT is generated deterministically from its hash. The same hash will
+                    always produce the same tier, colors, and appearance.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Color Palette */}
+          <div className="max-w-3xl mx-auto mt-6">
+            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg p-6">
+              <h3 className="text-sm text-gray-500 uppercase tracking-wider mb-4">
+                Color Palette
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Glass Color</p>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-12 h-12 rounded border-2 border-gray-700"
+                      style={{ backgroundColor: tierInfo.glassColor }}
+                    />
+                    <p className="text-sm font-mono text-gray-300">{tierInfo.glassColor}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Glow Color</p>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-12 h-12 rounded border-2 border-gray-700"
+                      style={{ backgroundColor: tierInfo.glowColor }}
+                    />
+                    <p className="text-sm font-mono text-gray-300">{tierInfo.glowColor}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-4 justify-center mt-8">
+            <a
+              href="/gallery"
+              className="px-6 py-3 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 rounded-lg font-medium transition-colors"
+            >
+              Back to Gallery
+            </a>
+            <a
+              href="/mint"
+              className="px-6 py-3 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-lg font-medium transition-colors"
+            >
+              Mint Your Own
+            </a>
+          </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -97,11 +97,11 @@ export default function TierViewer({
       camera = new THREE.PerspectiveCamera(75, containerWidth / containerHeight, 0.1, 1000);
       camera.position.set(0, 0, 5);
 
-      // Renderer with dark background for starfield
+      // Renderer with black background for starfield
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
       renderer.setSize(containerWidth, containerHeight);
       renderer.setPixelRatio(window.devicePixelRatio);
-      renderer.setClearColor(0x0a0a0f, 1); // Dark background for stars
+      renderer.setClearColor(0x000000, 1); // Black background for stars
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.0;
       container.appendChild(renderer.domElement);

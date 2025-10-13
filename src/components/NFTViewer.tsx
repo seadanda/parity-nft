@@ -61,14 +61,14 @@ export default function NFTViewer({ hash, metadata }: NFTViewerProps) {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
       {/* 3D Viewer - Takes up 2 columns on desktop */}
       <div className="lg:col-span-2">
-        <Card glass className="p-0 overflow-hidden aspect-video">
+        <div className="overflow-hidden aspect-video">
           <TierViewer
             glassColor={metadata.glassColor}
             glowColor={metadata.glowColor}
             autoRotate={true}
             loadHDR={true}
           />
-        </Card>
+        </div>
       </div>
 
       {/* Metadata Sidebar - 1 column on desktop, full width on mobile */}
