@@ -300,8 +300,10 @@ sqlite3 data/whitelist.sqlite
 | `npm run db:init` | Initialize database schema (preserves data) |
 | `npm run db:init:drop` | Drop and recreate all tables (⚠️ destructive) |
 | `npm run db:seed` | Add test users for development |
+| `npm run db:status` | Check database status (counts, recent activity) |
 | `npm run whitelist:import` | Import emails from `whitelist` file |
 | `npm run whitelist:add <email>` | Add a single email to whitelist |
+| `npm run proxy:balance` | Check proxy account balance |
 | `npm run test:email` | Test email flow |
 
 ---

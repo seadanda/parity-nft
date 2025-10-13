@@ -63,7 +63,7 @@ export function getSubscanLink(
       return `${base}/account/${value}`;
     case 'nft':
       if (collectionId !== undefined && itemId !== undefined) {
-        return `${base}/nft/${collectionId}/${itemId}`;
+        return `${base}/nft_item/${collectionId}-${itemId}`;
       }
       return base;
     default:

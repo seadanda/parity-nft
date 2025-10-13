@@ -124,6 +124,12 @@ export default function MintForm() {
 
       if (!response.ok) {
         setMintStatus('error');
+
+        // Handle specific error types
+        if (result.error === 'PROXY_BALANCE_TOO_LOW') {
+          throw new Error(result.message || 'Minting service temporarily unavailable. Please try again later or contact support.');
+        }
+
         throw new Error(result.error || 'Failed to mint NFT');
       }
 

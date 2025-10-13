@@ -13,6 +13,7 @@
     "db:status": "tsx scripts/check-db-status.ts",
     "whitelist:import": "tsx scripts/import-whitelist.ts",
     "whitelist:add": "tsx scripts/add-to-whitelist.ts",
+    "proxy:balance": "tsx scripts/check-proxy-balance.ts",
     "test:email": "tsx scripts/test-email-flow.ts"
   },
   "dependencies": {

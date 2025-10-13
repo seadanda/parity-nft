@@ -166,6 +166,38 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
     throw new Error('Proxy not configured correctly');
   }
 
+  // Check proxy account balance before minting
+  const MIN_BALANCE_DOT = 0.5; // Minimum 0.5 DOT required
+  const LOW_BALANCE_WARNING_DOT = 2; // Warn if below 2 DOT
+  const DECIMALS = 10; // Asset Hub uses 10 decimals for DOT
+
+  try {
+    const accountInfo = await api.query.system.account(charlie.address);
+    const balance = (accountInfo as unknown as { data: { free: { toBigInt: () => bigint } } }).data;
+    const freeBalance = balance.free.toBigInt();
+    const balanceDOT = Number(freeBalance) / Math.pow(10, DECIMALS);
+
+    console.log(`[mint] Proxy account ${charlie.address} balance: ${balanceDOT.toFixed(4)} DOT`);
+
+    // Check if balance is too low to mint
+    if (balanceDOT < MIN_BALANCE_DOT) {
+      await api.disconnect();
+      console.error(`[mint] ❌ CRITICAL: Proxy account balance too low: ${balanceDOT.toFixed(4)} DOT (minimum: ${MIN_BALANCE_DOT} DOT)`);
+      throw new Error(`INSUFFICIENT_PROXY_BALANCE: Proxy account has insufficient funds (${balanceDOT.toFixed(4)} DOT). Please top up the proxy account.`);
+    }
+
+    // Warn if balance is getting low (but still sufficient)
+    if (balanceDOT < LOW_BALANCE_WARNING_DOT) {
+      console.warn(`[mint] ⚠️  WARNING: Proxy account balance is low: ${balanceDOT.toFixed(4)} DOT. Consider topping up soon.`);
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('INSUFFICIENT_PROXY_BALANCE')) {
+      throw error; // Re-throw our custom error
+    }
+    // If we can't check balance, log warning but continue
+    console.warn('[mint] ⚠️  Could not check proxy account balance:', error);
+  }
+
   // Get next NFT ID first (needed for deterministic hash)
   const items = await api.query.nfts.item.entries(COLLECTION_ID);
   let nextId = 0;
@@ -319,7 +351,18 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
 
   // Record mint in database after transaction completes
   try {
-    await recordMint(email, recipientAddress);
+    await recordMint(
+      email,
+      recipientAddress,
+      result.collectionId,
+      result.nftId,
+      result.hash,
+      result.tier,
+      result.rarity,
+      result.transactionHash,
+      result.metadataUrl,
+      result.imageUrl
+    );
   } catch (dbError) {
     console.error('Failed to record mint in database:', dbError);
     // Don't fail the mint if database recording fails

@@ -345,7 +345,7 @@ export async function sendMintSuccessEmail(
   const greeting = name ? `Hi ${name}` : 'Hello';
 
   const viewerUrl = `${process.env.APP_URL || 'http://localhost:3000'}/view?hash=${hash}`;
-  const subscanUrl = `https://assethub-polkadot.subscan.io/nft/${process.env.COLLECTION_ID}/${nftId}`;
+  const subscanUrl = `https://assethub-polkadot.subscan.io/nft_item/${process.env.COLLECTION_ID}-${nftId}`;
 
   const htmlContent = `
 <!DOCTYPE html>

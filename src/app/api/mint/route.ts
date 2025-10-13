@@ -66,6 +66,20 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Mint API error:', error);
 
+    // Handle insufficient proxy balance error specifically
+    if (error instanceof Error && error.message.includes('INSUFFICIENT_PROXY_BALANCE')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'PROXY_BALANCE_TOO_LOW',
+          message: 'The minting service is temporarily unavailable due to insufficient funds. Please contact support.',
+          details: error.message
+        },
+        { status: 503 } // Service Unavailable
+      );
+    }
+
+    // Generic error handling
     return NextResponse.json(
       {
         success: false,
