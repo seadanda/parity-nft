@@ -14,6 +14,8 @@ interface TierViewerProps {
   autoRotate?: boolean;
   loadHDR?: boolean; // Whether to load the large HDR file (default: false for performance)
   className?: string;
+  tierName?: string; // Tier name for stamp
+  mintId?: number; // Mint ID for stamp
 }
 
 export default function TierViewer({
@@ -21,9 +23,12 @@ export default function TierViewer({
   glowColor = '#ffffff',
   autoRotate = true,
   loadHDR = true,
-  className = ''
+  className = '',
+  tierName,
+  mintId
 }: TierViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const stampCanvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -485,6 +490,76 @@ export default function TierViewer({
     };
   }, [glassColor, glowColor, autoRotate]);
 
+  // Draw stamp overlay
+  useEffect(() => {
+    if (!stampCanvasRef.current || !tierName) return;
+
+    const canvas = stampCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const drawStamp = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const container = containerRef.current;
+      if (!container) return;
+
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Scale everything based on container size (relative to a 600px base)
+      const scale = Math.min(width, height) / 600;
+      const pad = 14 * scale;
+      const line1 = `Tier: ${tierName}`;
+      const line2 = mintId !== undefined ? `Mint: ${mintId}` : '';
+      const line3 = `Parity • 10 Years`;
+      const x = width - pad;
+      const y = height - pad;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+
+      // Shadow glow - scaled
+      ctx.shadowColor = 'rgba(255,255,255,0.35)';
+      ctx.shadowBlur = 6 * scale;
+
+      // Big bold title - scaled
+      ctx.font = `900 ${32 * scale}px "Unbounded", Arial, sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillText(line3, x, y);
+
+      // Tier - scaled
+      ctx.font = `${13 * scale}px Arial`;
+      ctx.fillStyle = 'rgba(255,255,255,0.70)';
+      ctx.fillText(line1, x, y - 40 * scale);
+
+      // Mint id - scaled
+      if (line2) {
+        ctx.font = `${12 * scale}px Arial`;
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.fillText(line2, x, y - 60 * scale);
+      }
+
+      // Reset shadow
+      ctx.shadowBlur = 0;
+    };
+
+    drawStamp();
+
+    const handleResize = () => drawStamp();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [tierName, mintId]);
+
   return (
     <div
       ref={containerRef}
@@ -493,6 +568,21 @@ export default function TierViewer({
         position: 'relative',
         overflow: 'hidden',
       }}
-    />
+    >
+      {tierName && (
+        <canvas
+          ref={stampCanvasRef}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            zIndex: 10,
+          }}
+        />
+      )}
+    </div>
   );
 }

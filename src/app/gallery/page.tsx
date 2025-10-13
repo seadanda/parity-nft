@@ -176,6 +176,8 @@ export default function GalleryPage() {
                           glowColor={tierInfo.glowColor}
                           autoRotate={true}
                           loadHDR={true}
+                          tierName={nft.tier}
+                          mintId={nft.nft_id}
                           className="w-full h-full"
                         />
                       </div>

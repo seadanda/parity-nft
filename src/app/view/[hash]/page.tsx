@@ -50,6 +50,7 @@ export default function ViewNFTPage() {
                 glowColor={tierInfo.glowColor}
                 autoRotate={true}
                 loadHDR={true}
+                tierName={tierInfo.name}
                 className="w-full h-full"
               />
             </div>
@@ -71,10 +72,6 @@ export default function ViewNFTPage() {
                   <p className="text-xs text-gray-500">Rarity</p>
                   <p className="text-lg font-semibold text-white">{tierInfo.rarity}</p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-500">Collection</p>
-                  <p className="text-lg font-mono text-white">#{COLLECTION_ID}</p>
-                </div>
               </div>
             </div>
 
@@ -85,7 +82,6 @@ export default function ViewNFTPage() {
               </h3>
               <div className="space-y-3">
                 <div>
-                  <p className="text-xs text-gray-500 mb-2">Deterministic ID</p>
                   <p className="text-sm font-mono text-gray-300 break-all">
                     {hash}
                   </p>
@@ -95,37 +91,6 @@ export default function ViewNFTPage() {
                     This NFT is generated deterministically from its hash. The same hash will
                     always produce the same tier, colors, and appearance.
                   </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Color Palette */}
-          <div className="max-w-3xl mx-auto mt-6">
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg p-6">
-              <h3 className="text-sm text-gray-500 uppercase tracking-wider mb-4">
-                Color Palette
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-500 mb-2">Glass Color</p>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded border-2 border-gray-700"
-                      style={{ backgroundColor: tierInfo.glassColor }}
-                    />
-                    <p className="text-sm font-mono text-gray-300">{tierInfo.glassColor}</p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-2">Glow Color</p>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded border-2 border-gray-700"
-                      style={{ backgroundColor: tierInfo.glowColor }}
-                    />
-                    <p className="text-sm font-mono text-gray-300">{tierInfo.glowColor}</p>
-                  </div>
                 </div>
               </div>
             </div>

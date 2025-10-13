@@ -94,7 +94,7 @@ export default function TiersPage() {
           </h1>
           <p className="text-xl text-text-muted max-w-2xl mx-auto">
             12 unique tiers with varying rarity. Each tier features distinct glass and glow colors
-            determined by cryptographic randomness from your mint hash.
+            determined by your mint hash.
           </p>
         </div>
 
