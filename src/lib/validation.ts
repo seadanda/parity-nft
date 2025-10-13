@@ -62,7 +62,7 @@ export async function checkAccountBalance(
 
   try {
     // Use RPC endpoint from environment (Asset Hub for production)
-    const rpcEndpoint = process.env.RPC_ENDPOINT || process.env.NEXT_PUBLIC_RPC_ENDPOINT;
+    const rpcEndpoint = process.env.RPC_ENDPOINT;
 
     if (!rpcEndpoint) {
       throw new Error('RPC_ENDPOINT not configured');
