@@ -108,34 +108,15 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
     throw new Error('Proxy not configured correctly');
   }
 
-  // Check proxy account balance before minting
-  const MIN_BALANCE_DOT = 0.5; // Minimum 0.5 DOT required
-  const LOW_BALANCE_WARNING_DOT = 2; // Warn if below 2 DOT
+  // Log proxy account balance for monitoring
   const DECIMALS = 10; // Asset Hub uses 10 decimals for DOT
-
   try {
     const accountInfo = await api.query.system.account(charlie.address);
     const balance = (accountInfo as unknown as { data: { free: { toBigInt: () => bigint } } }).data;
     const freeBalance = balance.free.toBigInt();
     const balanceDOT = Number(freeBalance) / Math.pow(10, DECIMALS);
-
     console.log(`[mint] Proxy account ${charlie.address} balance: ${balanceDOT.toFixed(4)} DOT`);
-
-    // Check if balance is too low to mint
-    if (balanceDOT < MIN_BALANCE_DOT) {
-      await api.disconnect();
-      console.error(`[mint] ❌ CRITICAL: Proxy account balance too low: ${balanceDOT.toFixed(4)} DOT (minimum: ${MIN_BALANCE_DOT} DOT)`);
-      throw new Error(`INSUFFICIENT_PROXY_BALANCE: Proxy account has insufficient funds (${balanceDOT.toFixed(4)} DOT). Please top up the proxy account.`);
-    }
-
-    // Warn if balance is getting low (but still sufficient)
-    if (balanceDOT < LOW_BALANCE_WARNING_DOT) {
-      console.warn(`[mint] ⚠️  WARNING: Proxy account balance is low: ${balanceDOT.toFixed(4)} DOT. Consider topping up soon.`);
-    }
   } catch (error) {
-    if (error instanceof Error && error.message.includes('INSUFFICIENT_PROXY_BALANCE')) {
-      throw error; // Re-throw our custom error
-    }
     // If we can't check balance, log warning but continue
     console.warn('[mint] ⚠️  Could not check proxy account balance:', error);
   }
@@ -162,8 +143,6 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   // Upload tier image to IPFS
   const tierImageFilename = `${tierInfo.name.toLowerCase().replace(/ /g, '-')}.png`;
   const tierImagePath = path.join(process.cwd(), 'public', 'tier-images', tierImageFilename);
-
-  console.log('Uploading tier image to IPFS:', tierImageFilename);
 
   let imageIpfsUrl = '';
   try {
@@ -192,12 +171,10 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
       );
 
       imageIpfsUrl = `ipfs://${imageUpload.cid}`;
-      console.log('Image uploaded to IPFS:', imageIpfsUrl);
-    } else {
-      console.warn('Tier image not found, skipping image upload:', tierImagePath);
+      console.log('[mint] Image uploaded:', imageIpfsUrl);
     }
   } catch (imageError) {
-    console.error('Failed to upload tier image to IPFS:', imageError);
+    console.error('[mint] Failed to upload tier image:', imageError);
     // Continue without image - animation_url is primary content
   }
 
@@ -234,13 +211,6 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const groupId = groupIdEnv && uuidRegex.test(groupIdEnv) ? groupIdEnv : undefined;
 
-  if (groupId) {
-    console.log('Using Pinata group ID:', groupId);
-  } else {
-    console.warn('PINATA_GROUP_ID not set or invalid, uploading without group');
-  }
-
-  console.log('Uploading metadata to Pinata...');
   const upload = await uploadJson(
     pinataConfig,
     jsonMetadata,
@@ -253,7 +223,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
     }
   );
 
-  console.log('Upload result:', upload);
+  console.log('[mint] Metadata uploaded:', upload.cid);
 
   if (!upload || !upload.cid) {
     await api.disconnect();
@@ -266,6 +236,9 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   const mintCall = api.tx.nfts.forceMint(COLLECTION_ID, nextId, recipientAddress, null);
   const setMetadataCall = api.tx.nfts.setMetadata(COLLECTION_ID, nextId, metadata);
   const lockTransferCall = api.tx.nfts.lockItemTransfer(COLLECTION_ID, nextId);
+
+  // Note: setAttribute calls require broader proxy permissions than AssetManager provides
+  // Attributes are included in the JSON metadata instead
 
   // Batch and wrap in proxy call
   const batchCall = api.tx.utility.batchAll([
@@ -281,30 +254,52 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   );
 
   // Execute transaction
+  console.log('[mint] Submitting transaction...');
   const result = await new Promise<MintResult>((resolve, reject) => {
     proxyCall.signAndSend(charlie, (result) => {
       const { status, events, dispatchError } = result;
+
       if (status.isInBlock) {
+        console.log('[mint] Transaction included in block:', status.asInBlock.toHex());
+
         if (dispatchError) {
           if (dispatchError.isModule) {
             const decoded = api.registry.findMetaError(dispatchError.asModule);
+            console.error(`[mint] Error: ${decoded.section}.${decoded.name}: ${decoded.docs.join(' ')}`);
             reject(new Error(`${decoded.section}.${decoded.name}: ${decoded.docs.join(' ')}`));
           } else {
+            console.error('[mint] Error:', dispatchError.toString());
             reject(new Error(dispatchError.toString()));
           }
           return;
         }
 
         const mintSuccess = events.some(({ event }) => api.events.nfts.Issued?.is(event));
+
+        // Check for ProxyExecuted and extract any errors
+        let proxyError: string | null = null;
         const proxySuccess = events.some(({ event }) => {
           if (api.events.proxy.ProxyExecuted?.is(event)) {
             const [result] = event.data;
-            return result && typeof result === 'object' && 'isOk' in result && result.isOk;
+            if (result && typeof result === 'object' && 'isOk' in result && result.isOk) {
+              return true;
+            }
+            // Extract error from ProxyExecuted
+            if (result && typeof result === 'object' && 'isErr' in result) {
+              const err = (result as any).asErr;
+              if (err && err.isModule) {
+                const decoded = api.registry.findMetaError(err.asModule);
+                proxyError = `${decoded.section}.${decoded.name}: ${decoded.docs.join(' ')}`;
+              } else {
+                proxyError = err.toString();
+              }
+            }
           }
           return false;
         });
 
         if (mintSuccess && proxySuccess) {
+          console.log('[mint] ✅ NFT minted successfully - Collection:', COLLECTION_ID, 'Item:', nextId);
           resolve({
             success: true,
             hash,
@@ -319,7 +314,12 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
             collectionId: COLLECTION_ID
           });
         } else {
-          reject(new Error('Mint transaction failed'));
+          if (proxyError) {
+            console.error('[mint] Proxy execution error:', proxyError);
+            reject(new Error(`Proxy execution failed: ${proxyError}`));
+          } else {
+            reject(new Error('Mint transaction failed'));
+          }
         }
       }
     }).catch(reject);

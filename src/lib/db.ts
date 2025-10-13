@@ -50,10 +50,11 @@ async function initializeTables() {
   await db.execute('CREATE INDEX IF NOT EXISTS idx_whitelist_email ON whitelist(email)');
 
   // Verification codes table
+  // Only one active code per email - new requests overwrite old ones
   await db.execute(`
     CREATE TABLE IF NOT EXISTS verification_codes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
       code TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       expires_at TEXT NOT NULL,
@@ -83,11 +84,11 @@ async function initializeTables() {
   await db.execute('CREATE INDEX IF NOT EXISTS idx_sessions_email ON sessions(email)');
   await db.execute('CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)');
 
-  // Mint records table
+  // Mint records table - tracks all mints
+  // Note: email is NOT stored for privacy - use sessions table to link email to mints
   await db.execute(`
     CREATE TABLE IF NOT EXISTS mint_records (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT NOT NULL UNIQUE,
       wallet_address TEXT NOT NULL,
       collection_id INTEGER NOT NULL,
       nft_id INTEGER NOT NULL,
@@ -303,7 +304,7 @@ export async function recordMint(
       INSERT INTO mint_records (
         wallet_address, collection_id, nft_id, hash, tier, rarity,
         transaction_hash, metadata_ipfs, image_ipfs, minted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `,
     args: [
       walletAddress,
