@@ -144,7 +144,8 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   }
 
   // Verify proxy relationship
-  const [proxies] = await api.query.proxy.proxies(bobAddress);
+  const proxyResult = await api.query.proxy.proxies(bobAddress);
+  const proxies = (proxyResult as unknown as [unknown, unknown])[0];
 
   // Normalize addresses to AccountId for comparison (handles different SS58 formats)
   const charlieAccountId = api.createType('AccountId', charlie.address);
@@ -192,6 +193,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   const animationUrl = `ipfs://QmcPqw25RfDdqUvSgVC4sxvXsy43dA2sCRSDAyKx1UPTqa/index.html?hash=${hash}`;
 
   interface NFTMetadata {
+    [key: string]: unknown;
     name: string;
     description: string;
     animation_url: string;
@@ -271,27 +273,9 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   );
 
   // Execute transaction
-  interface TxEvent {
-    event: {
-      data: unknown[];
-    };
-  }
-
-  interface TxCallback {
-    status: {
-      isInBlock: boolean;
-      asInBlock: { toHex: () => string };
-    };
-    events: TxEvent[];
-    dispatchError?: {
-      isModule: boolean;
-      asModule: { index: { toNumber: () => number }; error: { toNumber: () => number } };
-      toString: () => string;
-    };
-  }
-
   const result = await new Promise<MintResult>((resolve, reject) => {
-    proxyCall.signAndSend(charlie, ({ status, events, dispatchError }: TxCallback) => {
+    proxyCall.signAndSend(charlie, (result) => {
+      const { status, events, dispatchError } = result;
       if (status.isInBlock) {
         if (dispatchError) {
           if (dispatchError.isModule) {

@@ -74,7 +74,8 @@ export async function checkAccountBalance(
     api = await ApiPromise.create({ provider });
 
     // Query account balance
-    const { data: balance } = await api.query.system.account(address);
+    const accountInfo = await api.query.system.account(address);
+    const balance = (accountInfo as unknown as { data: { free: { toBigInt: () => bigint } } }).data;
     const free = balance.free.toBigInt();
 
     // Convert to DOT for display (10 decimals)

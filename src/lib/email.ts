@@ -5,8 +5,8 @@ import nodemailer from 'nodemailer';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const USE_RESEND = IS_PRODUCTION || process.env.USE_RESEND === 'true';
 
-// Resend client (production)
-const resend = USE_RESEND ? new Resend(process.env.RESEND_API_KEY) : null;
+// Resend client (production) - only instantiate if API key is provided
+const resend = USE_RESEND && process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // Ethereal account cache for local testing
 let etherealAccount: { user: string; pass: string } | null = null;
