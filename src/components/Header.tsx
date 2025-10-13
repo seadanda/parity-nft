@@ -19,11 +19,11 @@ export default function Header() {
             <Link
               href="/"
               className="flex items-center hover:opacity-80 transition-opacity"
-              aria-label="Parity 10 Years Home"
+              aria-label="10 Years of Parity Home"
             >
               <Image
                 src="/parity-10-years-logo.png"
-                alt="Parity 10 Years Anniversary Logo"
+                alt="10 Years of Parity Anniversary Logo"
                 width={120}
                 height={40}
                 priority

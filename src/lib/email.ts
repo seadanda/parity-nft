@@ -38,7 +38,7 @@ async function getEtherealTransporter() {
 }
 
 export async function sendVerificationEmail(email: string, code: string) {
-  const subject = 'Your Parity 10 Years NFT Verification Code';
+  const subject = 'Your 10 Years of Parity NFT Verification Code';
   const greeting = 'Hey';
   const mintUrl = `${process.env.APP_URL || 'http://localhost:3000'}/mint`;
 
@@ -88,7 +88,7 @@ export async function sendVerificationEmail(email: string, code: string) {
 </head>
 <body>
   <div class="header">
-    <h1 style="color: #e81d64; margin: 0;">Parity 10 Years</h1>
+    <h1 style="color: #e81d64; margin: 0;">10 Years of Parity</h1>
     <p style="color: #666; margin: 5px 0;">NFT Mint</p>
   </div>
 
@@ -151,7 +151,7 @@ Parity Technologies
     const transporter = await getEtherealTransporter();
 
     const info = await transporter.sendMail({
-      from: '"Parity 10 Years NFT" <nft@parity.io>',
+      from: '"10 Years of Parity NFT" <nft@parity.io>',
       to: email,
       subject,
       text: textContent,
@@ -216,7 +216,7 @@ export async function sendAlreadyMintedEmail(email: string) {
 </head>
 <body>
   <div class="header">
-    <h1 style="color: #e81d64; margin: 0;">Parity 10 Years</h1>
+    <h1 style="color: #e81d64; margin: 0;">10 Years of Parity</h1>
     <p style="color: #666; margin: 5px 0;">NFT Mint</p>
   </div>
 
@@ -226,7 +226,7 @@ export async function sendAlreadyMintedEmail(email: string) {
     Don't be greedy - you've already minted yours! 🎉
   </div>
 
-  <p>You've already claimed your Parity 10 Years NFT. Each email address can only mint one NFT.</p>
+  <p>You've already claimed your 10 Years of Parity NFT. Each email address can only mint one NFT.</p>
 
   <p>Thanks for being part of Parity's 10-year journey!</p>
 
@@ -243,7 +243,7 @@ ${greeting},
 
 Don't be greedy - you've already minted yours!
 
-You've already claimed your Parity 10 Years NFT. Each email address can only mint one NFT.
+You've already claimed your 10 Years of Parity NFT. Each email address can only mint one NFT.
 
 Thanks for being part of Parity's 10-year journey!
 
@@ -267,7 +267,7 @@ Parity Technologies
     const transporter = await getEtherealTransporter();
 
     const info = await transporter.sendMail({
-      from: '"Parity 10 Years NFT" <nft@parity.io>',
+      from: '"10 Years of Parity NFT" <nft@parity.io>',
       to: email,
       subject,
       text: textContent,
@@ -294,7 +294,7 @@ export async function sendMintSuccessEmail(
   hash: string,
   name?: string
 ) {
-  const subject = 'Your Parity 10 Years NFT is Ready! 🎉';
+  const subject = 'Your 10 Years of Parity NFT is Ready! 🎉';
   const greeting = name ? `Hi ${name}` : 'Hello';
 
   const viewerUrl = `${process.env.APP_URL || 'http://localhost:3000'}/view?hash=${hash}`;
@@ -360,7 +360,7 @@ export async function sendMintSuccessEmail(
 
   <p>${greeting},</p>
 
-  <p>Your Parity 10 Years NFT has been successfully minted!</p>
+  <p>Your 10 Years of Parity NFT has been successfully minted!</p>
 
   <div class="nft-info">
     <p style="margin: 0; opacity: 0.9;">Tier</p>
@@ -391,7 +391,7 @@ export async function sendMintSuccessEmail(
   const textContent = `
 ${greeting},
 
-Your Parity 10 Years NFT has been successfully minted!
+Your 10 Years of Parity NFT has been successfully minted!
 
 Tier: ${tier}
 NFT ID: ${nftId}
@@ -424,7 +424,7 @@ Parity Technologies
     const transporter = await getEtherealTransporter();
 
     const info = await transporter.sendMail({
-      from: '"Parity 10 Years NFT" <nft@parity.io>',
+      from: '"10 Years of Parity NFT" <nft@parity.io>',
       to: email,
       subject,
       text: textContent,

@@ -45,13 +45,13 @@ export default function NFTViewer({ hash, metadata }: NFTViewerProps) {
   };
 
   const handleShareTwitter = () => {
-    const text = `Check out my Parity 10 Years NFT - ${metadata.tier} tier!`;
+    const text = `Check out my 10 Years of Parity NFT - ${metadata.tier} tier!`;
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleShareTelegram = () => {
-    const text = `Check out my Parity 10 Years NFT - ${metadata.tier} tier!`;
+    const text = `Check out my 10 Years of Parity NFT - ${metadata.tier} tier!`;
     const url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };

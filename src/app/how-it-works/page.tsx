@@ -107,7 +107,7 @@ export default function HowItWorksPage() {
             How It Works
           </h1>
           <p className="text-xl text-text-muted max-w-2xl mx-auto">
-            A comprehensive guide to the Parity 10 Years NFT celebration: from minting to viewing your unique 3D artwork.
+            A comprehensive guide to the 10 Years of Parity NFT celebration: from minting to viewing your unique 3D artwork.
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export default function HowItWorksPage() {
               What Is This?
             </h2>
             <p className="text-lg text-text-muted mb-4">
-              The Parity 10 Years NFT is a unique 3D visualization celebrating a decade of innovation.
+              The 10 Years of Parity NFT is a unique 3D visualization celebrating a decade of innovation.
               Each NFT features a glass-effect Parity logo with:
             </p>
             <ul className="space-y-3 text-text-muted ml-6">
@@ -953,7 +953,7 @@ ipfs repo gc
                   <div className="bg-background/80 rounded-lg p-4 border border-border">
                     <pre className="text-xs text-text-muted overflow-x-auto">
 {`{
-  "name": "Parity 10 Years #42",
+  "name": "10 Years of Parity #42",
   "description": "A commemorative NFT celebrating Parity's 10-year milestone",
   "image": "ipfs://QmAbc123.../preview.png",
   "animation_url": "ipfs://QmDef456.../viewer.html?hash=0x175adf...",
@@ -1334,7 +1334,7 @@ function pickWeightedTier(rng: SeededRandom) {
                   <div className="bg-background/80 rounded-lg p-4 border border-border">
                     <pre className="text-xs text-text-muted overflow-x-auto">
 {`const metadata = {
-  name: \`Parity 10 Years #\${itemId}\`,
+  name: \`10 Years of Parity #\${itemId}\`,
   description: "A commemorative NFT celebrating Parity's 10-year milestone",
 
   // Static preview image (PNG)
@@ -1501,7 +1501,7 @@ api.tx.nfts.setMetadata(
                               ▼
 6. Create Metadata JSON
    {
-     name: "Parity 10 Years #42",
+     name: "10 Years of Parity #42",
      image: "ipfs://Qm.../preview.png",
      animation_url: "ipfs://Qm.../viewer.html?hash=0x175adf...",
      attributes: [tier, colors, mintId]

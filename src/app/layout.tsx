@@ -12,18 +12,18 @@ const unbounded = Unbounded({
 });
 
 export const metadata: Metadata = {
-  title: "Parity 10 Years | Anniversary NFT Collection",
+  title: "10 Years of Parity | Anniversary NFT Collection",
   description: "Celebrate Parity's 10-year anniversary with unique 3D glass logo NFTs on Polkadot Asset Hub. Mint your soulbound commemorative NFT.",
   keywords: ["Parity", "NFT", "Polkadot", "Asset Hub", "Web3", "10 Years", "Anniversary"],
   authors: [{ name: "Parity Technologies" }],
   openGraph: {
-    title: "Parity 10 Years Anniversary NFT Collection",
+    title: "10 Years of Parity Anniversary NFT Collection",
     description: "Celebrate a decade of innovation with unique 3D glass logo NFTs on Polkadot",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Parity 10 Years Anniversary NFT Collection",
+    title: "10 Years of Parity Anniversary NFT Collection",
     description: "Celebrate a decade of innovation with unique 3D glass logo NFTs on Polkadot",
   },
 };

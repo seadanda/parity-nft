@@ -100,7 +100,7 @@ export default function Home() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-gradient-pink-purple">
-            Ten Years of Parity
+            10 Years of Parity
           </h1>
 
           <p className="text-xl text-text-muted max-w-2xl mx-auto">

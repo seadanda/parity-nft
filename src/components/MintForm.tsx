@@ -249,7 +249,7 @@ export default function MintForm() {
       >
         <div className="space-y-6">
           <p className="text-text-muted">
-            Congratulations! Your Parity 10 Years NFT has been successfully minted.
+            Congratulations! Your 10 Years of Parity NFT has been successfully minted.
           </p>
 
           {successData && (

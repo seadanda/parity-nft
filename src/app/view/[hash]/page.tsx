@@ -88,7 +88,7 @@ export default function ViewNFTPage() {
             NFT Details
           </h1>
           <p className="text-text-muted">
-            Parity 10 Years Anniversary Collection
+            10 Years of Parity Anniversary Collection
           </p>
         </div>
 

@@ -25,7 +25,7 @@ export default function MintPage() {
                 Mint Your <span className="text-gradient-pink-purple">NFT</span>
               </h1>
               <p className="text-base sm:text-lg text-text-muted">
-                Enter your details to receive a unique Parity 10 Years NFT.
+                Enter your details to receive a unique 10 Years of Parity NFT.
                 Each NFT features a 3D glass Parity logo with one of 12 rare tiers.
               </p>
             </div>
