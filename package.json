@@ -7,9 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "node scripts/seed-whitelist.js",
-    "db:reset": "node scripts/seed-whitelist.js --reset",
+    "db:init": "tsx scripts/init-db.ts",
+    "db:init:drop": "tsx scripts/init-db.ts --drop",
+    "db:seed": "tsx scripts/seed-whitelist.ts",
+    "db:status": "tsx scripts/check-db-status.ts",
     "whitelist:import": "tsx scripts/import-whitelist.ts",
+    "whitelist:add": "tsx scripts/add-to-whitelist.ts",
     "test:email": "tsx scripts/test-email-flow.ts"
   },
   "dependencies": {

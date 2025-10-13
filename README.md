@@ -6,12 +6,19 @@ Next.js application for minting soulbound NFTs to celebrate Parity's 10-year ann
 
 ```bash
 npm install
+
+# Initialize database and import whitelist
+npm run db:init
+npm run whitelist:import
+
+# Start development server
 npm run dev
 ```
 
-## Deployment
+## Documentation
 
-See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for complete Vercel deployment instructions.
+- [DATABASE_SETUP.md](./DATABASE_SETUP.md) - Complete database setup and management guide
+- [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) - Vercel deployment instructions
 
 ## Features
 

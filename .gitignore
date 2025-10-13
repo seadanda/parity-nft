@@ -46,3 +46,5 @@ data/*.sqlite*
 data/*.db*
 /whitelist
 .env*.local
+
+/package-lock.json
