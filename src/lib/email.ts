@@ -2,11 +2,19 @@
 import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-const USE_RESEND = IS_PRODUCTION || process.env.USE_RESEND === 'true';
+// USE_RESEND env variable controls whether to use Resend or Ethereal/console
+// - "true" → use Resend (requires RESEND_API_KEY)
+// - "false" or unset → use Ethereal/console (development mode)
+const USE_RESEND = process.env.USE_RESEND === 'true';
 
 // Resend client (production) - only instantiate if API key is provided
 const resend = USE_RESEND && process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+// Log email configuration on startup
+console.log(`[email] Email mode: ${USE_RESEND ? 'Resend (production)' : 'Ethereal/Console (development)'}`);
+if (USE_RESEND && !resend) {
+  console.warn('[email] ⚠️  WARNING: USE_RESEND is true but RESEND_API_KEY is not set!');
+}
 
 // Ethereal account cache for local testing
 let etherealAccount: { user: string; pass: string } | null = null;
@@ -141,6 +149,7 @@ Parity Technologies
 
   if (USE_RESEND && resend) {
     // Production: Use Resend
+    console.log(`[email] Sending verification code via Resend to ${email}`);
     const result = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'nft@parity.io',
       to: email,
@@ -151,6 +160,12 @@ Parity Technologies
 
     console.log('Email sent via Resend:', result);
     return result;
+  } else if (USE_RESEND && !resend) {
+    // Production mode but no Resend API key configured - ERROR!
+    console.error('❌ ERROR: USE_RESEND is true but RESEND_API_KEY is not set!');
+    console.error('Email would NOT be sent to:', email);
+    console.error('Code that would be sent:', code);
+    throw new Error('Email service not configured. Set RESEND_API_KEY in environment variables.');
   } else {
     // Development: Use Ethereal or console fallback
     const transporter = await getEtherealTransporter();
@@ -270,6 +285,7 @@ Parity Technologies
   `;
 
   if (USE_RESEND && resend) {
+    console.log(`[email] Sending already-minted email via Resend to ${email}`);
     const result = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'nft@parity.io',
       to: email,
@@ -280,6 +296,10 @@ Parity Technologies
 
     console.log('Already minted email sent via Resend:', result);
     return result;
+  } else if (USE_RESEND && !resend) {
+    console.error('❌ ERROR: USE_RESEND is true but RESEND_API_KEY is not set!');
+    console.error('Already-minted email would NOT be sent to:', email);
+    throw new Error('Email service not configured. Set RESEND_API_KEY in environment variables.');
   } else {
     const transporter = await getEtherealTransporter();
 
@@ -437,6 +457,7 @@ Parity Technologies
   `;
 
   if (USE_RESEND && resend) {
+    console.log(`[email] Sending mint success email via Resend to ${email}`);
     const result = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'nft@parity.io',
       to: email,
@@ -447,6 +468,10 @@ Parity Technologies
 
     console.log('Mint success email sent via Resend:', result);
     return result;
+  } else if (USE_RESEND && !resend) {
+    console.error('❌ ERROR: USE_RESEND is true but RESEND_API_KEY is not set!');
+    console.error('Mint success email would NOT be sent to:', email);
+    throw new Error('Email service not configured. Set RESEND_API_KEY in environment variables.');
   } else {
     const transporter = await getEtherealTransporter();
 
