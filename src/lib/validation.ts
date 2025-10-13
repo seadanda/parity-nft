@@ -19,14 +19,11 @@ export function isValidPolkadotAddress(address: string): boolean {
     const decoded = decodeAddress(address);
 
     // Re-encode with Polkadot prefix (0) to verify format
-    const encoded = encodeAddress(decoded, 0);
-
-    // Check if the re-encoded address matches or if the original address is valid for prefix 0
     // This ensures the address is a valid Polkadot address (not Kusama, etc.)
-    const reEncoded = encodeAddress(decodeAddress(address), 0);
+    const reEncoded = encodeAddress(decoded, 0);
 
     return address === reEncoded || address.startsWith('1'); // Polkadot addresses start with '1'
-  } catch (error) {
+  } catch {
     return false;
   }
 }

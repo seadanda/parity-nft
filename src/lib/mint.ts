@@ -1,6 +1,6 @@
 import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
 import crypto from 'crypto';
-import { PinataSDK, uploadJson } from 'pinata';
+import { uploadJson } from 'pinata';
 import { isEmailWhitelisted, hasEmailMinted, recordMint } from './db';
 
 // Tier definitions - MUST match sketch-nobase64.js exactly for deterministic generation
@@ -138,7 +138,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   // Validate recipient address
   try {
     api.createType('AccountId', recipientAddress);
-  } catch (error) {
+  } catch {
     await api.disconnect();
     throw new Error('Invalid recipient address');
   }
@@ -149,7 +149,12 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   // Normalize addresses to AccountId for comparison (handles different SS58 formats)
   const charlieAccountId = api.createType('AccountId', charlie.address);
 
-  const charlieProxy = proxies.find((p: any) => {
+  interface ProxyDefinition {
+    delegate: { toString: () => string };
+    proxyType: { toString: () => string };
+  }
+
+  const charlieProxy = (proxies as unknown as ProxyDefinition[]).find((p) => {
     const delegateAccountId = api.createType('AccountId', p.delegate.toString());
     return delegateAccountId.eq(charlieAccountId) &&
       (p.proxyType.toString() === 'AssetManager' || p.proxyType.toString() === 'Any');
@@ -165,7 +170,10 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   let nextId = 0;
   if (items.length > 0) {
     const existingIds = items.map(([key]) => {
-      const id = (key.args[1] as any).toNumber ? (key.args[1] as any).toNumber() : parseInt((key.args[1] as any).toString());
+      const itemId = key.args[1];
+      const id = typeof itemId === 'object' && itemId && 'toNumber' in itemId
+        ? (itemId as { toNumber: () => number }).toNumber()
+        : parseInt(String(itemId));
       return id;
     });
     nextId = Math.max(...existingIds) + 1;
@@ -183,7 +191,15 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   // Create metadata
   const animationUrl = `ipfs://QmcPqw25RfDdqUvSgVC4sxvXsy43dA2sCRSDAyKx1UPTqa/index.html?hash=${hash}`;
 
-  const jsonMetadata: any = {
+  interface NFTMetadata {
+    name: string;
+    description: string;
+    animation_url: string;
+    image?: string;
+    attributes: Array<{ trait_type: string; value: string }>;
+  }
+
+  const jsonMetadata: NFTMetadata = {
     name: `10 years of Parity ${tierInfo.name}`,
     description: "Celebrating Parity's 10 year anniversary with a generative NFT collection",
     animation_url: animationUrl,
@@ -255,8 +271,27 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   );
 
   // Execute transaction
+  interface TxEvent {
+    event: {
+      data: unknown[];
+    };
+  }
+
+  interface TxCallback {
+    status: {
+      isInBlock: boolean;
+      asInBlock: { toHex: () => string };
+    };
+    events: TxEvent[];
+    dispatchError?: {
+      isModule: boolean;
+      asModule: { index: { toNumber: () => number }; error: { toNumber: () => number } };
+      toString: () => string;
+    };
+  }
+
   const result = await new Promise<MintResult>((resolve, reject) => {
-    proxyCall.signAndSend(charlie, ({ status, events, dispatchError }: any) => {
+    proxyCall.signAndSend(charlie, ({ status, events, dispatchError }: TxCallback) => {
       if (status.isInBlock) {
         if (dispatchError) {
           if (dispatchError.isModule) {
@@ -268,11 +303,11 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
           return;
         }
 
-        const mintSuccess = events.some(({ event }: any) => api.events.nfts.Issued?.is(event));
-        const proxySuccess = events.some(({ event }: any) => {
+        const mintSuccess = events.some(({ event }) => api.events.nfts.Issued?.is(event));
+        const proxySuccess = events.some(({ event }) => {
           if (api.events.proxy.ProxyExecuted?.is(event)) {
             const [result] = event.data;
-            return result.isOk;
+            return result && typeof result === 'object' && 'isOk' in result && result.isOk;
           }
           return false;
         });

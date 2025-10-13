@@ -11,7 +11,7 @@ export async function generateAndUploadImage(hash: string, nftId: number): Promi
   console.log(`🎨 Generating preview image for NFT #${nftId}`);
 
   const browser = await puppeteer.launch({
-    headless: 'new' as any,
+    headless: 'new' as unknown as boolean,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
