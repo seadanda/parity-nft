@@ -98,11 +98,12 @@ export async function POST(request: NextRequest) {
       message: 'Mint recorded successfully'
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error recording mint:', error);
 
     // Check if it's a unique constraint violation (already minted)
-    if (error?.code === 'SQLITE_CONSTRAINT' && error?.message?.includes('UNIQUE')) {
+    const err = error as { code?: string; message?: string };
+    if (err?.code === 'SQLITE_CONSTRAINT' && err?.message?.includes('UNIQUE')) {
       return NextResponse.json(
         {
           success: false,

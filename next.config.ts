@@ -4,11 +4,19 @@ const nextConfig: NextConfig = {
   // Enable React strict mode for better error handling
   reactStrictMode: true,
 
+  // ESLint configuration
+  eslint: {
+    // Relax some rules during build for deployment
+    ignoreDuringBuilds: false,
+  },
+  typescript: {
+    // Don't fail build on TS errors during deployment (log them only)
+    ignoreBuildErrors: false,
+  },
+
   // Turbopack configuration
-  experimental: {
-    turbo: {
-      root: process.cwd(),
-    },
+  turbopack: {
+    root: process.cwd(),
   },
 
   // Optimize images
