@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate session
-    const session = validateSession(sessionToken);
+    const session = await validateSession(sessionToken);
     if (!session || session.email.toLowerCase() !== email.toLowerCase()) {
       return NextResponse.json(
         { error: 'Invalid or expired session' },

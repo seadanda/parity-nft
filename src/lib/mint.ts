@@ -3,20 +3,20 @@ import crypto from 'crypto';
 import { PinataSDK, uploadJson } from 'pinata';
 import { isEmailWhitelisted, hasEmailMinted, recordMint } from './db';
 
-// Tier definitions matching the viewer
+// Tier definitions - MUST match sketch-nobase64.js exactly for deterministic generation
 const TIERS = [
-  { name: 'Graphite', weight: 20, rarity: 'Common', glassColor: '#1a1a1a', glowColor: '#ffffff' },
-  { name: 'Bronze', weight: 12, rarity: 'Common', glassColor: '#cd7f32', glowColor: '#ff9944' },
-  { name: 'Silver', weight: 8, rarity: 'Uncommon', glassColor: '#c0c0c0', glowColor: '#ffffff' },
-  { name: 'Copper', weight: 8, rarity: 'Uncommon', glassColor: '#b87333', glowColor: '#ff6633' },
-  { name: 'Emerald', weight: 5, rarity: 'Rare', glassColor: '#50c878', glowColor: '#00ff00' },
-  { name: 'Sapphire', weight: 3, rarity: 'Very Rare', glassColor: '#0f52ba', glowColor: '#0080ff' },
-  { name: 'Green', weight: 3, rarity: 'Very Rare', glassColor: '#00ff00', glowColor: '#00ff00' },
-  { name: 'Ruby', weight: 2, rarity: 'Ultra Rare', glassColor: '#e0115f', glowColor: '#ff0040' },
-  { name: 'Gold', weight: 1.5, rarity: 'Ultra Rare', glassColor: '#ffd700', glowColor: '#ffff00' },
-  { name: 'Magenta', weight: 0.5, rarity: 'Legendary', glassColor: '#ff00ff', glowColor: '#ff00a8' },
-  { name: 'Obelisk', weight: 0.5, rarity: 'Legendary', glassColor: '#4b0082', glowColor: '#9400d3' },
-  { name: 'Obelisk Ultra', weight: 0.5, rarity: 'Legendary', glassColor: '#ff1493', glowColor: '#ff69b4' }
+  { name: 'Silver', weight: 8, rarity: 'Uncommon', glassColor: '#ffffff', glowColor: '#ffffff' },
+  { name: 'Graphite', weight: 20, rarity: 'Common', glassColor: '#2b2f36', glowColor: '#7a8899' },
+  { name: 'Bronze', weight: 12, rarity: 'Common', glassColor: '#cd7f32', glowColor: '#755b5b' },
+  { name: 'Copper', weight: 8, rarity: 'Uncommon', glassColor: '#e81308', glowColor: '#be8a46' },
+  { name: 'Emerald', weight: 5, rarity: 'Rare', glassColor: '#17a589', glowColor: '#66ffc8' },
+  { name: 'Sapphire', weight: 3, rarity: 'Very Rare', glassColor: '#1f5fff', glowColor: '#66a3ff' },
+  { name: 'Green', weight: 3, rarity: 'Very Rare', glassColor: '#005908', glowColor: '#ddffdd' },
+  { name: 'Ruby', weight: 2, rarity: 'Ultra Rare', glassColor: '#dc5e85', glowColor: '#ff6f91' },
+  { name: 'Gold', weight: 1.5, rarity: 'Ultra Rare', glassColor: '#ffd700', glowColor: '#ffe680' },
+  { name: 'Magenta', weight: 0.5, rarity: 'Legendary', glassColor: '#ff00a8', glowColor: '#ff66cc' },
+  { name: 'Obelisk', weight: 0.5, rarity: 'Legendary', glassColor: '#000000', glowColor: '#ffffff' },
+  { name: 'Obelisk Ultra', weight: 0.5, rarity: 'Legendary', glassColor: '#000000', glowColor: '#ed1d64' }
 ];
 
 // Seeded random number generator (Mulberry32)
@@ -106,11 +106,11 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   }
 
   // Validate whitelist
-  if (!isEmailWhitelisted(email)) {
+  if (!await isEmailWhitelisted(email)) {
     throw new Error('Email not whitelisted');
   }
 
-  if (hasEmailMinted(email)) {
+  if (await hasEmailMinted(email)) {
     throw new Error('Email already minted');
   }
 
@@ -289,24 +289,6 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
         });
 
         if (mintSuccess && proxySuccess) {
-          // Record mint in database
-          try {
-            await recordMint(
-              email,
-              recipientAddress,
-              COLLECTION_ID,
-              nextId,
-              hash,
-              tierInfo.name,
-              tierInfo.rarity,
-              status.asInBlock.toHex(),
-              metadata,
-              imageUrl
-            );
-          } catch (dbError) {
-            console.error('Failed to record mint in database:', dbError);
-          }
-
           resolve({
             success: true,
             hash,
@@ -326,6 +308,14 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
       }
     }).catch(reject);
   });
+
+  // Record mint in database after transaction completes
+  try {
+    await recordMint(email, recipientAddress);
+  } catch (dbError) {
+    console.error('Failed to record mint in database:', dbError);
+    // Don't fail the mint if database recording fails
+  }
 
   await api.disconnect();
   return result;

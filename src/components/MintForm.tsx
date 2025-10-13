@@ -17,7 +17,15 @@ import { Check, Loader2, Circle, ExternalLink } from 'lucide-react';
 type MintStatus = 'idle' | 'validating' | 'checking_balance' | 'minting' | 'in_block' | 'finalized' | 'success' | 'error';
 
 // Status Check Component
-function StatusCheck({ label, status }: { label: string; status: 'pending' | 'loading' | 'complete' }) {
+function StatusCheck({
+  label,
+  status,
+  balance
+}: {
+  label: string;
+  status: 'pending' | 'loading' | 'complete';
+  balance?: string;
+}) {
   return (
     <div className="flex items-center gap-3">
       {status === 'complete' && <Check className="w-5 h-5 text-green-400 flex-shrink-0" />}
@@ -29,6 +37,7 @@ function StatusCheck({ label, status }: { label: string; status: 'pending' | 'lo
         'text-text-muted'
       }`}>
         {label}
+        {balance && <span className="text-text-muted ml-2">- Balance: {balance} DOT</span>}
       </span>
     </div>
   );
@@ -45,6 +54,7 @@ export default function MintForm() {
   const [mintStatus, setMintStatus] = useState<MintStatus>('idle');
   const [blockNumber, setBlockNumber] = useState<string | null>(null);
   const [extrinsicId, setExtrinsicId] = useState<string | null>(null);
+  const [accountBalance, setAccountBalance] = useState<string | null>(null);
 
   const {
     register,
@@ -66,6 +76,7 @@ export default function MintForm() {
   const onSubmit = async (data: MintFormData) => {
     setIsSubmitting(true);
     setError(null);
+    setAccountBalance(null);
     setMintStatus('validating');
 
     try {
@@ -87,6 +98,8 @@ export default function MintForm() {
       }
 
       const { hasBalance, balance } = await balanceCheckResponse.json();
+      setAccountBalance(balance); // Store balance for display
+
       if (!hasBalance) {
         throw new Error(`Insufficient balance. Account has ${balance} DOT but needs at least 0.1 DOT`);
       }
@@ -155,6 +168,7 @@ export default function MintForm() {
   const handleReset = () => {
     setSuccessData(null);
     setError(null);
+    setAccountBalance(null);
     reset();
   };
 
@@ -202,6 +216,7 @@ export default function MintForm() {
                     mintStatus === 'idle' || mintStatus === 'validating' ? 'pending' :
                     mintStatus === 'checking_balance' ? 'loading' : 'complete'
                   }
+                  balance={accountBalance || undefined}
                 />
                 <StatusCheck
                   label="Minting..."

@@ -54,18 +54,25 @@ export type MintFormData = z.infer<typeof mintFormSchema>;
 
 /**
  * Checks if an account has sufficient balance (>= 0.1 DOT)
+ * Uses the RPC endpoint from environment variables
  * @param address - Polkadot address to check
- * @param rpcEndpoint - Optional RPC endpoint (defaults to Polkadot RPC)
  * @returns Object with hasBalance boolean and balance string
  */
 export async function checkAccountBalance(
-  address: string,
-  rpcEndpoint: string = 'wss://polkadot-rpc.polkadot.io'
+  address: string
 ): Promise<{ hasBalance: boolean; balance: string; balancePlanck: bigint }> {
   let api: ApiPromise | null = null;
 
   try {
-    // Connect to Polkadot
+    // Use RPC endpoint from environment (Asset Hub for production)
+    const rpcEndpoint = process.env.RPC_ENDPOINT || process.env.NEXT_PUBLIC_RPC_ENDPOINT;
+
+    if (!rpcEndpoint) {
+      throw new Error('RPC_ENDPOINT not configured');
+    }
+
+    console.log(`[checkAccountBalance] Using RPC: ${rpcEndpoint}`);
+
     const provider = new WsProvider(rpcEndpoint);
     api = await ApiPromise.create({ provider });
 
@@ -73,8 +80,10 @@ export async function checkAccountBalance(
     const { data: balance } = await api.query.system.account(address);
     const free = balance.free.toBigInt();
 
-    // Convert to DOT for display (10 decimals for Polkadot)
+    // Convert to DOT for display (10 decimals)
     const balanceDOT = Number(free) / 1e10;
+
+    console.log(`[checkAccountBalance] Address ${address} has ${balanceDOT} DOT`);
 
     return {
       hasBalance: free >= MIN_BALANCE_PLANCK,

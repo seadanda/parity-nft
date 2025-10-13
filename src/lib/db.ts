@@ -291,35 +291,18 @@ export async function hasEmailMinted(email: string): Promise<boolean> {
 
 export async function recordMint(
   email: string,
-  walletAddress: string,
-  collectionId: number,
-  nftId: number,
-  hash: string,
-  tier: string,
-  rarity: string,
-  transactionHash?: string,
-  metadataIpfs?: string,
-  imageIpfs?: string
+  walletAddress: string
 ) {
   const db = getDb();
   const result = await db.execute({
     sql: `
       INSERT INTO mint_records (
-        email, wallet_address, collection_id, nft_id,
-        hash, tier, rarity, transaction_hash, metadata_ipfs, image_ipfs
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        email, wallet_address, minted_at
+      ) VALUES (?, ?, CURRENT_TIMESTAMP)
     `,
     args: [
       email.toLowerCase(),
-      walletAddress,
-      collectionId,
-      nftId,
-      hash,
-      tier,
-      rarity,
-      transactionHash || null,
-      metadataIpfs || null,
-      imageIpfs || null
+      walletAddress
     ]
   });
   return result;
