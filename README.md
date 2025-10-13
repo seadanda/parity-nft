@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Parity 10 Years Anniversary NFT Minting Platform
 
-## Getting Started
+Next.js application for minting soulbound NFTs to celebrate Parity's 10-year anniversary.
 
-First, run the development server:
+## Quick Start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deployment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for complete Vercel deployment instructions.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Features
 
-## Learn More
+- Email verification with 6-digit codes
+- Whitelist management (Turso database)
+- Deterministic 3D NFT generation (12 rarity tiers)
+- Polkadot Asset Hub integration (proxy minting)
+- Three.js interactive viewer
 
-To learn more about Next.js, take a look at the following resources:
+## Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Next.js 15.5 + TypeScript
+- Turso (SQLite for serverless)
+- @polkadot/api
+- Resend (email)
+- Pinata (IPFS)
+- Three.js
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Environment Variables
 
-## Deploy on Vercel
+See `.env.example` in root directory.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Required for production:
+- `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN`
+- `RESEND_API_KEY`
+- `PINATA_JWT`
+- `RPC_ENDPOINT`
+- `COLLECTION_ID`
+- `PROXY_SEED`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure
+
+```
+src/
+├── app/              # Next.js routes
+│   ├── api/         # API endpoints
+│   ├── mint/        # Minting page
+│   └── view/        # NFT viewer
+├── components/      # React components
+└── lib/             # Core logic (mint, db, email)
+public/
+├── tier-images/     # Static tier previews
+└── *.glb            # 3D models
+```
+
+## License
+
+MIT

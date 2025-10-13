@@ -96,8 +96,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
     ASSET_HUB_WS = process.env.RPC_ENDPOINT || 'wss://polkadot-asset-hub-rpc.polkadot.io',
     PROXY_SEED = process.env.PROXY_SEED,
     COLLECTION_OWNER_ADDRESS = process.env.COLLECTION_OWNER_ADDRESS,
-    PINATA_JWT = process.env.PINATA_JWT,
-    GENERATE_IMAGE = process.env.GENERATE_IMAGE !== 'false'
+    PINATA_JWT = process.env.PINATA_JWT
   } = config;
 
   // Validate COLLECTION_ID
@@ -177,19 +176,9 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   const hash = '0x' + crypto.createHash('sha256').update(hashInput).digest('hex');
   const tierInfo = calculateTierFromHash(hash);
 
-  // Generate preview image (optional)
-  let imageUrl: string | undefined;
-  if (GENERATE_IMAGE) {
-    try {
-      console.log('🎨 Generating preview image...');
-      const { generateAndUploadImage } = await import('./image-generator');
-      imageUrl = await generateAndUploadImage(hash, nextId);
-      console.log('   ✅ Preview image uploaded:', imageUrl);
-    } catch (error) {
-      console.error('❌ Image generation failed:', error);
-      console.warn('   Continuing without preview image...');
-    }
-  }
+  // Use static tier preview image (no Puppeteer needed)
+  // Images are stored in /public/tier-images/{tier-name}.png
+  const imageUrl = `/tier-images/${tierInfo.name.toLowerCase().replace(/ /g, '-')}.png`;
 
   // Create metadata
   const animationUrl = `ipfs://QmcPqw25RfDdqUvSgVC4sxvXsy43dA2sCRSDAyKx1UPTqa/index.html?hash=${hash}`;

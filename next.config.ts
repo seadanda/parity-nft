@@ -4,6 +4,13 @@ const nextConfig: NextConfig = {
   // Enable React strict mode for better error handling
   reactStrictMode: true,
 
+  // Turbopack configuration
+  experimental: {
+    turbo: {
+      root: process.cwd(),
+    },
+  },
+
   // Optimize images
   images: {
     formats: ['image/webp', 'image/avif'],
