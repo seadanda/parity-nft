@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Share2, Copy, ExternalLink, Check } from 'lucide-react';
 import TierBadge from '@/components/TierBadge';
 import TierViewer from '@/components/TierViewer';
 import { Button, Card } from '@/components/ui';
 import { getSubscanLink, formatHash, truncateAddress } from '@/lib/utils';
+import { getIdentityDisplayName } from '@/lib/identity';
 
 interface NFTMetadata {
   nftId: string;
@@ -32,8 +33,28 @@ interface NFTViewerProps {
 
 export default function NFTViewer({ hash, metadata }: NFTViewerProps) {
   const [copied, setCopied] = useState<'link' | null>(null);
+  const [ownerIdentity, setOwnerIdentity] = useState<string>('anon');
+  const [loadingIdentity, setLoadingIdentity] = useState(false);
 
   const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/view/${hash}`;
+
+  // Fetch owner identity on mount
+  useEffect(() => {
+    if (metadata.owner) {
+      setLoadingIdentity(true);
+      getIdentityDisplayName(metadata.owner)
+        .then(displayName => {
+          setOwnerIdentity(displayName);
+        })
+        .catch(err => {
+          console.error('Failed to fetch owner identity:', err);
+          setOwnerIdentity('anon');
+        })
+        .finally(() => {
+          setLoadingIdentity(false);
+        });
+    }
+  }, [metadata.owner]);
 
   const handleCopyLink = async () => {
     try {
@@ -114,15 +135,20 @@ export default function NFTViewer({ hash, metadata }: NFTViewerProps) {
               </div>
             </div>
 
-            {/* Owner - Clickable to Subscan */}
+            {/* Owner - Show identity name and wallet address */}
             {metadata.owner && (
               <div>
                 <div className="text-xs text-text-muted mb-1">Owner</div>
+                {/* Display identity name prominently */}
+                <div className="text-sm font-medium mb-1">
+                  {loadingIdentity ? '...' : ownerIdentity}
+                </div>
+                {/* Show wallet address as secondary info */}
                 <a
                   href={getSubscanLink('account', metadata.owner)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-mono text-sm text-parity-pink hover:text-parity-purple transition-colors flex items-center gap-1"
+                  className="font-mono text-xs text-text-muted hover:text-parity-purple transition-colors flex items-center gap-1"
                 >
                   {truncateAddress(metadata.owner)}
                   <ExternalLink className="w-3 h-3" />

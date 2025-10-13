@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Copy } from 'lucide-react';
 import { calculateTierFromHash } from '@/lib/tier-calculator';
+import { getIdentitiesBatch } from '@/lib/identity';
 
 const TierViewer = dynamic(() => import('@/components/TierViewer'), {
   ssr: false,
@@ -19,6 +20,7 @@ interface NFTData {
   rarity: string;
   transaction_hash: string | null;
   minted_at: string;
+  identity?: string; // Display name from People chain
 }
 
 export default function GalleryPage() {
@@ -34,7 +36,25 @@ export default function GalleryPage() {
         const data = await response.json();
 
         if (data.success) {
-          setNfts(data.mints);
+          const mintsData = data.mints;
+
+          // Fetch identities for all wallet addresses directly from People chain
+          const addresses = mintsData.map((nft: NFTData) => nft.wallet_address);
+          if (addresses.length > 0) {
+            try {
+              const identities = await getIdentitiesBatch(addresses);
+
+              // Merge identity data with NFT data
+              mintsData.forEach((nft: NFTData) => {
+                nft.identity = identities.get(nft.wallet_address) || 'anon';
+              });
+            } catch (identityErr) {
+              console.error('Failed to fetch identities:', identityErr);
+              // Continue without identities - all will show as 'anon'
+            }
+          }
+
+          setNfts(mintsData);
         } else {
           setError(data.error || 'Failed to load NFTs');
         }
@@ -193,7 +213,7 @@ export default function GalleryPage() {
 
                         <div className="pt-2 border-t border-gray-800">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs text-gray-500">Wallet</p>
+                            <p className="text-xs text-gray-500">Owner</p>
                             <button
                               onClick={() => navigator.clipboard.writeText(nft.wallet_address)}
                               className="text-gray-500 hover:text-pink-400 transition-colors"
@@ -202,11 +222,16 @@ export default function GalleryPage() {
                               <Copy className="w-3.5 h-3.5" />
                             </button>
                           </div>
+                          {/* Display identity name prominently */}
+                          <div className="text-sm font-medium text-white">
+                            {nft.identity || 'anon'}
+                          </div>
+                          {/* Show wallet address as secondary info */}
                           <a
                             href={`https://assethub-polkadot.subscan.io/account/${nft.wallet_address}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm font-mono text-gray-300 hover:text-pink-400 transition-colors block"
+                            className="text-xs font-mono text-gray-500 hover:text-pink-400 transition-colors block"
                             title={nft.wallet_address}
                           >
                             {truncateAddress(nft.wallet_address)}

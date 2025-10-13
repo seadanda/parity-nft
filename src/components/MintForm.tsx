@@ -10,11 +10,12 @@ import { Button, Input, Modal, Card } from '@/components/ui';
 import { mintFormSchema, type MintFormData } from '@/lib/validation';
 import { type MintResponse } from '@/lib/api';
 import { getSubscanLink, formatHash } from '@/lib/utils';
+import { getIdentity } from '@/lib/identity';
 import EmailVerification from './EmailVerification';
 import TierViewer from './TierViewer';
 import { Check, Loader2, Circle, ExternalLink } from 'lucide-react';
 
-type MintStatus = 'idle' | 'validating' | 'checking_balance' | 'minting' | 'in_block' | 'finalized' | 'success' | 'error';
+type MintStatus = 'idle' | 'validating' | 'checking_identity' | 'checking_balance' | 'minting' | 'in_block' | 'finalized' | 'success' | 'error';
 
 // Status Check Component
 function StatusCheck({
@@ -55,6 +56,7 @@ export default function MintForm() {
   const [blockNumber, setBlockNumber] = useState<string | null>(null);
   const [extrinsicId, setExtrinsicId] = useState<string | null>(null);
   const [accountBalance, setAccountBalance] = useState<string | null>(null);
+  const [identityName, setIdentityName] = useState<string | null>(null);
 
   const {
     register,
@@ -77,12 +79,18 @@ export default function MintForm() {
     setIsSubmitting(true);
     setError(null);
     setAccountBalance(null);
+    setIdentityName(null);
     setMintStatus('validating');
 
     try {
       // Status: Validating address (already validated by form schema)
       setMintStatus('validating');
       await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Status: Checking identity
+      setMintStatus('checking_identity');
+      const identity = await getIdentity(data.walletAddress);
+      setIdentityName(identity.display);
 
       // Status: Checking balance - actual RPC call
       setMintStatus('checking_balance');
@@ -175,6 +183,7 @@ export default function MintForm() {
     setSuccessData(null);
     setError(null);
     setAccountBalance(null);
+    setIdentityName(null);
     reset();
   };
 
@@ -217,9 +226,16 @@ export default function MintForm() {
                   status={mintStatus === 'validating' ? 'loading' : 'complete'}
                 />
                 <StatusCheck
-                  label="Has ED (0.1 DOT)"
+                  label={identityName ? `Identity: ${identityName}` : 'Checking identity'}
                   status={
                     mintStatus === 'idle' || mintStatus === 'validating' ? 'pending' :
+                    mintStatus === 'checking_identity' ? 'loading' : 'complete'
+                  }
+                />
+                <StatusCheck
+                  label="Has ED (0.1 DOT)"
+                  status={
+                    ['idle', 'validating', 'checking_identity'].includes(mintStatus) ? 'pending' :
                     mintStatus === 'checking_balance' ? 'loading' : 'complete'
                   }
                   balance={accountBalance || undefined}
@@ -227,21 +243,21 @@ export default function MintForm() {
                 <StatusCheck
                   label="Minting..."
                   status={
-                    ['idle', 'validating', 'checking_balance'].includes(mintStatus) ? 'pending' :
+                    ['idle', 'validating', 'checking_identity', 'checking_balance'].includes(mintStatus) ? 'pending' :
                     mintStatus === 'minting' ? 'loading' : 'complete'
                   }
                 />
                 <StatusCheck
                   label="In block"
                   status={
-                    ['idle', 'validating', 'checking_balance', 'minting'].includes(mintStatus) ? 'pending' :
+                    ['idle', 'validating', 'checking_identity', 'checking_balance', 'minting'].includes(mintStatus) ? 'pending' :
                     mintStatus === 'in_block' ? 'loading' : 'complete'
                   }
                 />
                 <StatusCheck
                   label="Finalized"
                   status={
-                    ['idle', 'validating', 'checking_balance', 'minting', 'in_block'].includes(mintStatus) ? 'pending' :
+                    ['idle', 'validating', 'checking_identity', 'checking_balance', 'minting', 'in_block'].includes(mintStatus) ? 'pending' :
                     mintStatus === 'finalized' ? 'loading' : 'complete'
                   }
                 />

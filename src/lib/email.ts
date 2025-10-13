@@ -123,7 +123,6 @@ export async function sendVerificationEmail(email: string, code: string) {
 
   <div class="footer">
     <p>Parity Technologies</p>
-    <p>10 Years of Building the Future</p>
   </div>
 </body>
 </html>
@@ -144,7 +143,6 @@ If you didn't request this code, you can safely ignore this email.
 
 --
 Parity Technologies
-10 Years of Building the Future
   `;
 
   if (USE_RESEND && resend) {
@@ -264,7 +262,6 @@ export async function sendAlreadyMintedEmail(email: string) {
 
   <div class="footer">
     <p>Parity Technologies</p>
-    <p>10 Years of Building the Future</p>
   </div>
 </body>
 </html>
@@ -281,7 +278,6 @@ Thanks for being part of Parity's 10-year journey!
 
 --
 Parity Technologies
-10 Years of Building the Future
   `;
 
   if (USE_RESEND && resend) {
@@ -429,7 +425,6 @@ export async function sendMintSuccessEmail(
 
   <div class="footer">
     <p>Parity Technologies</p>
-    <p>10 Years of Building the Future</p>
   </div>
 </body>
 </html>
@@ -453,7 +448,6 @@ This NFT is soulbound to your wallet and represents your connection to Parity's 
 
 --
 Parity Technologies
-10 Years of Building the Future
   `;
 
   if (USE_RESEND && resend) {
