@@ -76,10 +76,11 @@ async function initializeDatabase() {
     console.log('✅ whitelist table');
 
     // Verification codes table
+    // Only one active code per email - new requests overwrite old ones
     await db.execute(`
       CREATE TABLE IF NOT EXISTS verification_codes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
         code TEXT NOT NULL,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         expires_at TEXT NOT NULL,
@@ -112,10 +113,10 @@ async function initializeDatabase() {
     console.log('✅ sessions table');
 
     // Mint records table
+    // Email removed for privacy - only store wallet address and NFT data
     await db.execute(`
       CREATE TABLE IF NOT EXISTS mint_records (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT NOT NULL UNIQUE,
         wallet_address TEXT NOT NULL,
         collection_id INTEGER NOT NULL,
         nft_id INTEGER NOT NULL,
@@ -128,7 +129,6 @@ async function initializeDatabase() {
         image_ipfs TEXT
       )
     `);
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_mints_email ON mint_records(email)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_mints_wallet ON mint_records(wallet_address)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_mints_nft ON mint_records(collection_id, nft_id)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_mints_hash ON mint_records(hash)');

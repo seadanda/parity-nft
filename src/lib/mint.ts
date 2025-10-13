@@ -326,9 +326,9 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   });
 
   // Record mint in database after transaction completes
+  // Note: Email is NOT stored in mint_records for privacy
   try {
     await recordMint(
-      email,
       recipientAddress,
       result.collectionId,
       result.nftId,

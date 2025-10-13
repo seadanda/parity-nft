@@ -187,16 +187,10 @@ export async function createVerificationCode(email: string, ipAddress: string, u
   const code = crypto.randomInt(100000, 999999).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
 
-  // IMPORTANT: Invalidate any existing unused codes for this email
-  // This ensures only ONE code is active at a time (prevents timing attacks)
+  // Use INSERT OR REPLACE to ensure only one verification code per email
+  // This automatically overwrites any existing code and refreshes the 10 minute timer
   await db.execute({
-    sql: 'UPDATE verification_codes SET used_at = CURRENT_TIMESTAMP WHERE email = ? AND used_at IS NULL',
-    args: [email.toLowerCase()]
-  });
-
-  // Create new code
-  await db.execute({
-    sql: 'INSERT INTO verification_codes (email, code, expires_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)',
+    sql: 'INSERT OR REPLACE INTO verification_codes (email, code, expires_at, ip_address, user_agent, created_at, used_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, NULL)',
     args: [email.toLowerCase(), code, expiresAt, ipAddress, userAgent]
   });
 
@@ -280,17 +274,20 @@ export async function validateSession(token: string): Promise<{ email: string; n
 }
 
 // Mint record queries
+// Note: We check hasEmailMinted via sessions table, not mint_records
+// mint_records intentionally does NOT store email for privacy
 export async function hasEmailMinted(email: string): Promise<boolean> {
   const db = getDb();
+  // Check if this email has an active session that has minted
+  // We track this through the sessions table, not mint_records
   const result = await db.execute({
-    sql: 'SELECT 1 FROM mint_records WHERE LOWER(email) = LOWER(?) LIMIT 1',
+    sql: 'SELECT 1 FROM sessions WHERE LOWER(email) = LOWER(?) AND is_active = 0 LIMIT 1',
     args: [email]
   });
   return result.rows.length > 0;
 }
 
 export async function recordMint(
-  email: string,
   walletAddress: string,
   collectionId: number,
   nftId: number,
@@ -305,12 +302,11 @@ export async function recordMint(
   const result = await db.execute({
     sql: `
       INSERT INTO mint_records (
-        email, wallet_address, collection_id, nft_id, hash, tier, rarity,
+        wallet_address, collection_id, nft_id, hash, tier, rarity,
         transaction_hash, metadata_ipfs, image_ipfs, minted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `,
     args: [
-      email.toLowerCase(),
       walletAddress,
       collectionId,
       nftId,

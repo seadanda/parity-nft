@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:init": "tsx scripts/init-db.ts",
     "db:init:drop": "tsx scripts/init-db.ts --drop",
+    "db:migrate": "tsx scripts/migrate-db-privacy.ts",
     "db:seed": "tsx scripts/seed-whitelist.ts",
     "db:status": "tsx scripts/check-db-status.ts",
     "whitelist:import": "tsx scripts/import-whitelist.ts",
