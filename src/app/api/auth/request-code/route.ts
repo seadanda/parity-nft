@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
 
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
+    const sessionId = request.cookies.get('sessionId')?.value || `anon-${ipAddress}`;
 
     // Validate email format
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -29,19 +30,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting - IP only (to prevent abuse)
-    // Allow up to 20 code requests per hour per IP
-    // NOTE: No per-email rate limit - users can request new codes freely
-    //       Old codes are automatically invalidated (see createVerificationCode in db.ts)
-    const ipRateLimit = await checkRateLimit(ipAddress, 'ip', 'request_code', 20, 60 * 60 * 1000);
-    if (!ipRateLimit.allowed) {
-      await logAudit('CODE_REQUEST', email, false, ipAddress, userAgent, 'IP rate limited');
+    // Rate limiting - per session (10 requests/hour)
+    // Old codes are automatically invalidated (see createVerificationCode in db.ts)
+    const sessionRateLimit = await checkRateLimit(sessionId, 'session', 'request_code', 10, 60 * 60 * 1000);
+    if (!sessionRateLimit.allowed) {
+      await logAudit('CODE_REQUEST', email, false, ipAddress, userAgent, 'Session rate limited');
       return NextResponse.json(
         {
           success: false,
           error: 'RATE_LIMITED',
-          message: 'Too many requests from your network. Please try again in an hour.',
-          canRetryAt: ipRateLimit.lockedUntil
+          message: 'Too many verification requests. Please try again in 1 hour.',
+          canRetryAt: sessionRateLimit.lockedUntil
         },
         { status: 429 }
       );
