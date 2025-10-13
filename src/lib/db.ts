@@ -311,7 +311,7 @@ export async function recordMint(
 // Rate limiting queries
 export async function checkRateLimit(
   identifier: string,
-  identifierType: 'email' | 'ip',
+  identifierType: 'email' | 'session',
   action: string,
   maxAttempts: number,
   windowMs: number
