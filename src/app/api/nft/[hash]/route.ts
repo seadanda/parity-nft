@@ -127,6 +127,8 @@ export async function GET(
   { params }: { params: Promise<{ hash: string }> }
 ): Promise<NextResponse<NFTMetadataResponse>> {
   const resolvedParams = await params;
+  const COLLECTION_ID = parseInt(process.env.COLLECTION_ID || '662');
+
   try {
     const { hash } = resolvedParams;
 
@@ -136,6 +138,7 @@ export async function GET(
         {
           success: false,
           nftId: '',
+          collectionId: COLLECTION_ID,
           hash: hash || '',
           tier: '',
           rarity: '',
@@ -159,6 +162,7 @@ export async function GET(
         {
           success: false,
           nftId: '',
+          collectionId: COLLECTION_ID,
           hash,
           tier: '',
           rarity: '',
@@ -197,6 +201,7 @@ export async function GET(
         {
           success: false,
           nftId: '',
+          collectionId: COLLECTION_ID,
           hash,
           tier: '',
           rarity: '',
@@ -264,6 +269,7 @@ export async function GET(
       {
         success: false,
         nftId: '',
+        collectionId: COLLECTION_ID,
         hash: resolvedParams.hash || '',
         tier: '',
         rarity: '',
