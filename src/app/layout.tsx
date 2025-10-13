@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Header from "@/components/Header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -42,6 +44,8 @@ export default function RootLayout({
             {children}
           </main>
         </ErrorBoundary>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
