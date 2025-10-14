@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Copy } from 'lucide-react';
 import { calculateTierFromHash } from '@/lib/tier-calculator';
-import { getIdentitiesBatch } from '@/lib/identity';
 
 const TierViewer = dynamic(() => import('@/components/TierViewer'), {
   ssr: false,
@@ -36,25 +35,8 @@ export default function GalleryPage() {
         const data = await response.json();
 
         if (data.success) {
-          const mintsData = data.mints;
-
-          // Fetch identities for all wallet addresses directly from People chain
-          const addresses = mintsData.map((nft: NFTData) => nft.wallet_address);
-          if (addresses.length > 0) {
-            try {
-              const identities = await getIdentitiesBatch(addresses);
-
-              // Merge identity data with NFT data
-              mintsData.forEach((nft: NFTData) => {
-                nft.identity = identities.get(nft.wallet_address) || 'anon';
-              });
-            } catch (identityErr) {
-              console.error('Failed to fetch identities:', identityErr);
-              // Continue without identities - all will show as 'anon'
-            }
-          }
-
-          setNfts(mintsData);
+          // The API now includes identity data for each mint
+          setNfts(data.mints);
         } else {
           setError(data.error || 'Failed to load NFTs');
         }

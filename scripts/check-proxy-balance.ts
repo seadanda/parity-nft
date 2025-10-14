@@ -4,7 +4,29 @@
  * Shows current balance and warns if it's getting low
  */
 
-import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
+import { createClient } from "polkadot-api"
+import { getWsProvider } from "polkadot-api/ws-provider/node"
+import { dot } from "@polkadot-api/descriptors"
+import { cryptoWaitReady, sr25519PairFromSeed, encodeAddress } from '@polkadot/util-crypto';
+import { mnemonicToMiniSecret, mnemonicValidate } from '@polkadot/util-crypto';
+import { stringToU8a } from '@polkadot/util';
+
+/**
+ * Helper to create a keypair from seed phrase or derivation path
+ */
+async function createKeypairFromSeed(seed: string) {
+  await cryptoWaitReady();
+
+  // Check if it's a mnemonic
+  if (mnemonicValidate(seed)) {
+    const miniSecret = mnemonicToMiniSecret(seed);
+    return sr25519PairFromSeed(miniSecret);
+  }
+
+  // Otherwise treat as derivation path (e.g., //Alice)
+  const seedU8a = stringToU8a(seed.padEnd(32, ' '));
+  return sr25519PairFromSeed(seedU8a.slice(0, 32));
+}
 
 async function checkProxyBalance() {
   const PROXY_SEED = process.env.PROXY_SEED;
@@ -18,24 +40,23 @@ async function checkProxyBalance() {
   console.log('🔍 Checking proxy account balance...\n');
   console.log(`RPC Endpoint: ${RPC_ENDPOINT}`);
 
-  let api: ApiPromise | null = null;
+  let client: ReturnType<typeof createClient> | null = null;
 
   try {
     // Connect to Asset Hub
-    api = await ApiPromise.create({
-      provider: new WsProvider(RPC_ENDPOINT)
-    });
+    client = createClient(getWsProvider(RPC_ENDPOINT));
+    const api = client.getTypedApi(dot);
 
-    const keyring = new Keyring({ type: 'sr25519' });
-    const proxyAccount = keyring.addFromUri(PROXY_SEED);
+    // Create keypair from seed
+    const pair = await createKeypairFromSeed(PROXY_SEED);
+    const address = encodeAddress(pair.publicKey, 0); // Polkadot prefix
 
-    console.log(`Proxy Address: ${proxyAccount.address}\n`);
+    console.log(`Proxy Address: ${address}\n`);
 
     // Get account balance
-    const accountInfo = await api.query.system.account(proxyAccount.address);
-    const balance = (accountInfo as unknown as { data: { free: { toBigInt: () => bigint }; reserved: { toBigInt: () => bigint } } }).data;
-    const freeBalance = balance.free.toBigInt();
-    const reservedBalance = balance.reserved.toBigInt();
+    const accountInfo = await api.query.System.Account.getValue(address);
+    const freeBalance = accountInfo.data.free;
+    const reservedBalance = accountInfo.data.reserved;
     const DECIMALS = 10; // Asset Hub uses 10 decimals
 
     const freeDOT = Number(freeBalance) / Math.pow(10, DECIMALS);
@@ -83,8 +104,8 @@ async function checkProxyBalance() {
     console.error('❌ Error checking balance:', error);
     process.exit(1);
   } finally {
-    if (api) {
-      await api.disconnect();
+    if (client) {
+      client.destroy();
     }
   }
 }

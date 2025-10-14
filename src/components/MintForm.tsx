@@ -10,7 +10,6 @@ import { Button, Input, Modal, Card } from '@/components/ui';
 import { mintFormSchema, type MintFormData } from '@/lib/validation';
 import { type MintResponse } from '@/lib/api';
 import { getSubscanLink, formatHash } from '@/lib/utils';
-import { getIdentity } from '@/lib/identity';
 import EmailVerification from './EmailVerification';
 import TierViewer from './TierViewer';
 import { Check, Loader2, Circle, ExternalLink } from 'lucide-react';
@@ -89,8 +88,17 @@ export default function MintForm() {
 
       // Status: Checking identity
       setMintStatus('checking_identity');
-      const identity = await getIdentity(data.walletAddress);
-      setIdentityName(identity.display);
+      const identityResponse = await fetch('/api/identity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: data.walletAddress })
+      });
+      const identityData = await identityResponse.json();
+      if (identityData.success) {
+        setIdentityName(identityData.identity.display);
+      } else {
+        setIdentityName('anon');
+      }
 
       // Status: Checking balance - actual RPC call
       setMintStatus('checking_balance');

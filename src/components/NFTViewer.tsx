@@ -6,7 +6,6 @@ import TierBadge from '@/components/TierBadge';
 import TierViewer from '@/components/TierViewer';
 import { Button, Card } from '@/components/ui';
 import { getSubscanLink, formatHash, truncateAddress } from '@/lib/utils';
-import { getIdentityDisplayName } from '@/lib/identity';
 
 interface NFTMetadata {
   nftId: string;
@@ -42,9 +41,18 @@ export default function NFTViewer({ hash, metadata }: NFTViewerProps) {
   useEffect(() => {
     if (metadata.owner) {
       setLoadingIdentity(true);
-      getIdentityDisplayName(metadata.owner)
-        .then(displayName => {
-          setOwnerIdentity(displayName);
+      fetch('/api/identity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: metadata.owner })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setOwnerIdentity(data.identity.display);
+          } else {
+            setOwnerIdentity('anon');
+          }
         })
         .catch(err => {
           console.error('Failed to fetch owner identity:', err);

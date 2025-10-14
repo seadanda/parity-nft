@@ -1,5 +1,3 @@
-import { ApiPromise, WsProvider } from '@polkadot/api';
-
 const PEOPLE_CHAIN_RPC = 'wss://polkadot-people-rpc.polkadot.io';
 
 // Cache for identity lookups to avoid repeated RPC calls
@@ -9,6 +7,73 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 interface IdentityInfo {
   display: string;
   hasIdentity: boolean;
+}
+
+/**
+ * Helper function to decode identity data bytes to string
+ */
+function decodeIdentityData(data: any): string {
+  if (!data) return 'anon';
+
+  // PAPI returns structured data with type variants
+  // For identity data, it's typically { type: 'Raw0' to 'Raw32', value: FixedSizeBinary }
+
+  // Handle None type
+  if (data.type === 'None') {
+    return 'anon';
+  }
+
+  // Handle Raw types (Raw0, Raw1, ... Raw32)
+  if (data.type && data.type.startsWith('Raw') && data.value) {
+    const value = data.value;
+
+    // PAPI's FixedSizeBinary has helper methods
+    if (typeof value.asText === 'function') {
+      try {
+        const text = value.asText();
+        return text || 'anon';
+      } catch (e) {
+        console.warn('[identity] Error calling asText():', e);
+      }
+    }
+
+    // Try asBytes() if asText() didn't work
+    if (typeof value.asBytes === 'function') {
+      try {
+        const bytes = value.asBytes();
+        if (bytes instanceof Uint8Array) {
+          return new TextDecoder().decode(bytes);
+        }
+      } catch (e) {
+        console.warn('[identity] Error calling asBytes():', e);
+      }
+    }
+
+    // If value is directly a Uint8Array
+    if (value instanceof Uint8Array) {
+      return new TextDecoder().decode(value);
+    }
+
+    // If value is already a string
+    if (typeof value === 'string') {
+      return value;
+    }
+  }
+
+  // Handle if data is directly a Uint8Array
+  if (data instanceof Uint8Array) {
+    return new TextDecoder().decode(data);
+  }
+
+  // Handle if data is a string
+  if (typeof data === 'string') {
+    return data;
+  }
+
+  // Debug: log the actual structure if we can't decode it
+  console.warn('[identity] Unknown identity data structure:', JSON.stringify(data, null, 2));
+
+  return 'anon';
 }
 
 /**
@@ -23,6 +88,7 @@ export async function getIdentityDisplayName(accountId: string): Promise<string>
 
 /**
  * Fetches full identity information for a Polkadot account from the People chain
+ * Note: This function must be called server-side only
  * @param accountId - The Polkadot account address
  * @returns Identity information including display name and whether identity exists
  */
@@ -33,61 +99,58 @@ export async function getIdentity(accountId: string): Promise<IdentityInfo> {
     return { display: cached.display, hasIdentity: cached.display !== 'anon' };
   }
 
-  let api: ApiPromise | null = null;
+  // Dynamic imports to avoid bundling Node.js-specific code in the client
+  const { createClient } = await import("polkadot-api");
+  const { getWsProvider } = await import("polkadot-api/ws-provider/node");
+  const { people } = await import("@polkadot-api/descriptors");
+
+  let client: ReturnType<typeof createClient> | null = null;
 
   try {
-    const provider = new WsProvider(PEOPLE_CHAIN_RPC);
-    api = await ApiPromise.create({ provider });
+    // Create client and typed API
+    client = createClient(getWsProvider(PEOPLE_CHAIN_RPC));
+    const api = client.getTypedApi(people);
 
-    // Query identity.identityOf(accountId)
-    const identityOption = await api.query.identity.identityOf(accountId);
+    // Query identity
+    const identityData = await api.query.Identity.IdentityOf.getValue(accountId);
 
     // Check if identity exists
-    if (identityOption.isEmpty) {
-      // No identity set, cache and return "anon"
+    if (!identityData) {
       identityCache.set(accountId, { display: 'anon', timestamp: Date.now() });
       return { display: 'anon', hasIdentity: false };
     }
 
-    // Extract the identity data
-    const identity = (identityOption as any).unwrap();
+    // Extract display name
+    const displayField = identityData.info.display;
 
-    // Access the info.display field
-    // The display field is a Data type that can be Raw, None, or other variants
-    const info = (identity as any).info;
-    const displayData = info.display;
+    // Log the actual structure for debugging
+    console.log('[identity] Display field type:', typeof displayField);
+    console.log('[identity] Display field:', displayField);
 
-    let displayName = 'anon';
+    let displayName = decodeIdentityData(displayField);
 
-    // Check if display is set (not None)
-    if (displayData && !displayData.isNone) {
-      // Extract the raw bytes
-      const displayRaw = displayData.isRaw ? displayData.asRaw : displayData;
+    // Clean up the display name (remove extra quotes, whitespace)
+    displayName = displayName.trim().replace(/^["']|["']$/g, '');
 
-      // Convert to string
-      if (displayRaw && displayRaw.toUtf8) {
-        displayName = displayRaw.toUtf8();
-      } else if (displayRaw && displayRaw.toHuman) {
-        displayName = String(displayRaw.toHuman());
-      } else {
-        displayName = String(displayRaw);
-      }
-
-      // Clean up the display name (remove extra quotes, whitespace)
-      displayName = displayName.trim().replace(/^["']|["']$/g, '');
+    // If after cleaning we get empty string, use "anon"
+    if (!displayName) {
+      displayName = 'anon';
     }
 
-    // Cache the result
+    // Cache result
     identityCache.set(accountId, { display: displayName, timestamp: Date.now() });
 
     return { display: displayName, hasIdentity: true };
   } catch (error) {
     console.error('[identity] Error fetching identity for', accountId, error);
+    if (error instanceof Error) {
+      console.error('[identity] Error stack:', error.stack);
+    }
     // Return "anon" on error but don't cache it
     return { display: 'anon', hasIdentity: false };
   } finally {
-    if (api) {
-      await api.disconnect();
+    if (client) {
+      client.destroy();
     }
   }
 }
@@ -95,6 +158,7 @@ export async function getIdentity(accountId: string): Promise<IdentityInfo> {
 /**
  * Batch fetch identities for multiple accounts
  * More efficient than calling getIdentity multiple times
+ * Note: This function must be called server-side only
  * @param accountIds - Array of Polkadot account addresses
  * @returns Map of accountId to display name
  */
@@ -117,15 +181,20 @@ export async function getIdentitiesBatch(accountIds: string[]): Promise<Map<stri
     return results;
   }
 
-  let api: ApiPromise | null = null;
+  // Dynamic imports to avoid bundling Node.js-specific code in the client
+  const { createClient } = await import("polkadot-api");
+  const { getWsProvider } = await import("polkadot-api/ws-provider/node");
+  const { people } = await import("@polkadot-api/descriptors");
+
+  let client: ReturnType<typeof createClient> | null = null;
 
   try {
-    const provider = new WsProvider(PEOPLE_CHAIN_RPC);
-    api = await ApiPromise.create({ provider });
+    client = createClient(getWsProvider(PEOPLE_CHAIN_RPC));
+    const api = client.getTypedApi(people);
 
     // Query all identities in parallel
     const identityPromises = uncachedIds.map(accountId =>
-      api!.query.identity.identityOf(accountId)
+      api.query.Identity.IdentityOf.getValue(accountId)
     );
 
     const identities = await Promise.all(identityPromises);
@@ -133,28 +202,19 @@ export async function getIdentitiesBatch(accountIds: string[]): Promise<Map<stri
     // Process results
     for (let i = 0; i < uncachedIds.length; i++) {
       const accountId = uncachedIds[i];
-      const identityOption = identities[i];
+      const identityData = identities[i];
 
       let displayName = 'anon';
 
-      if (!identityOption.isEmpty) {
+      if (identityData) {
         try {
-          const identity = (identityOption as any).unwrap();
-          const info = (identity as any).info;
-          const displayData = info.display;
+          const displayField = identityData.info.display;
+          console.log('[identity] Batch display field for', accountId, ':', displayField);
+          displayName = decodeIdentityData(displayField);
+          displayName = displayName.trim().replace(/^["']|["']$/g, '');
 
-          if (displayData && !displayData.isNone) {
-            const displayRaw = displayData.isRaw ? displayData.asRaw : displayData;
-
-            if (displayRaw && displayRaw.toUtf8) {
-              displayName = displayRaw.toUtf8();
-            } else if (displayRaw && displayRaw.toHuman) {
-              displayName = String(displayRaw.toHuman());
-            } else {
-              displayName = String(displayRaw);
-            }
-
-            displayName = displayName.trim().replace(/^["']|["']$/g, '');
+          if (!displayName) {
+            displayName = 'anon';
           }
         } catch (error) {
           console.error('[identity] Error parsing identity for', accountId, error);
@@ -174,8 +234,8 @@ export async function getIdentitiesBatch(accountIds: string[]): Promise<Map<stri
       }
     }
   } finally {
-    if (api) {
-      await api.disconnect();
+    if (client) {
+      client.destroy();
     }
   }
 

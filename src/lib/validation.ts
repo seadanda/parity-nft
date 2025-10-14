@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
-import { ApiPromise, WsProvider } from '@polkadot/api';
 
 // Polkadot SS58 address validation
 // SS58 addresses start with specific characters and have specific lengths
@@ -52,13 +51,19 @@ export type MintFormData = z.infer<typeof mintFormSchema>;
 /**
  * Checks if an account has sufficient balance (>= 0.1 DOT)
  * Uses the RPC endpoint from environment variables
+ * Note: This function must be called server-side only
  * @param address - Polkadot address to check
  * @returns Object with hasBalance boolean and balance string
  */
 export async function checkAccountBalance(
   address: string
 ): Promise<{ hasBalance: boolean; balance: string; balancePlanck: bigint }> {
-  let api: ApiPromise | null = null;
+  // Dynamic import to avoid bundling Node.js-specific code in the client
+  const { createClient } = await import("polkadot-api");
+  const { getWsProvider } = await import("polkadot-api/ws-provider/node");
+  const { dot } = await import("@polkadot-api/descriptors");
+
+  let client: ReturnType<typeof createClient> | null = null;
 
   try {
     // Use RPC endpoint from environment (Asset Hub for production)
@@ -70,13 +75,15 @@ export async function checkAccountBalance(
 
     console.log(`[checkAccountBalance] Using RPC: ${rpcEndpoint}`);
 
-    const provider = new WsProvider(rpcEndpoint);
-    api = await ApiPromise.create({ provider });
+    // Create client and typed API
+    client = createClient(getWsProvider(rpcEndpoint));
+    const api = client.getTypedApi(dot);
 
     // Query account balance
-    const accountInfo = await api.query.system.account(address);
-    const balance = (accountInfo as unknown as { data: { free: { toBigInt: () => bigint } } }).data;
-    const free = balance.free.toBigInt();
+    const accountInfo = await api.query.System.Account.getValue(address);
+
+    // Extract free balance (already a bigint in PAPI)
+    const free = accountInfo.data.free;
 
     // Convert to DOT for display (10 decimals)
     const balanceDOT = Number(free) / 1e10;
@@ -92,8 +99,8 @@ export async function checkAccountBalance(
     console.error('Error checking balance:', error);
     throw new Error('Failed to check account balance');
   } finally {
-    if (api) {
-      await api.disconnect();
+    if (client) {
+      client.destroy();
     }
   }
 }
