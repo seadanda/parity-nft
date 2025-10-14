@@ -41,6 +41,7 @@
     "@types/three": "^0.180.0",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
+    "bufferutil": "^4.0.9",
     "clsx": "^2.1.1",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.545.0",
@@ -54,6 +55,8 @@
     "resend": "^6.1.2",
     "tailwindcss": "^4",
     "three": "^0.180.0",
+    "utf-8-validate": "^6.0.5",
+    "ws": "^8.18.3",
     "zod": "^4.1.12"
   },
   "devDependencies": {

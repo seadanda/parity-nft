@@ -29,6 +29,18 @@ const nextConfig: NextConfig = {
   // Production optimizations
   compress: true,
 
+  // Webpack configuration for native modules
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Externalize native Node.js modules that can't be bundled
+      config.externals.push({
+        'bufferutil': 'commonjs bufferutil',
+        'utf-8-validate': 'commonjs utf-8-validate',
+      });
+    }
+    return config;
+  },
+
   // Headers for security and performance
   async headers() {
     return [
