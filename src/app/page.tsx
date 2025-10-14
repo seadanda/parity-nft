@@ -168,24 +168,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Tier Preview Card */}
-        <section className="mb-24">
-          <Card glass className="p-12 max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-gradient-pink-purple">
-              Explore Rarity Tiers
-            </h2>
-            <p className="text-xl text-text-muted mb-8">
-              12 unique tiers with varying rarity. Each tier features distinct glass and glow colors
-              determined by your mint hash.
-            </p>
-            <Link href="/tiers">
-              <Button variant="primary" size="lg">
-                View All Tiers
-              </Button>
-            </Link>
-          </Card>
-        </section>
-
         {/* CTA Section */}
         <section className="text-center pb-24">
           <Card glass className="p-12 max-w-3xl mx-auto">
