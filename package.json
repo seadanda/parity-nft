@@ -17,7 +17,13 @@
     "proxy:balance": "tsx scripts/check-proxy-balance.ts",
     "ipfs:upload-images": "tsx scripts/upload-tier-images.ts",
     "test:email": "tsx scripts/test-email-flow.ts",
-    "test:mint": "tsx scripts/test-mint.ts"
+    "test:mint": "tsx scripts/test-mint.ts",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:identity": "vitest run tests/identity.test.ts",
+    "test:balance": "vitest run tests/balance.test.ts",
+    "chopsticks": "npx @acala-network/chopsticks@latest -c polkadot-asset-hub -p 8000"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -46,14 +52,17 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@acala-network/chopsticks": "^1.2.3",
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/ui": "^3.2.4",
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "tsx": "^4.20.6",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }
