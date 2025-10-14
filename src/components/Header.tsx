@@ -1,7 +1,13 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState } from 'react';
+import { Menu, X } from 'lucide-react';
 
 export default function Header() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <>
       {/* Skip to main content link for accessibility */}
@@ -31,8 +37,8 @@ export default function Header() {
               />
             </Link>
 
-            {/* Navigation */}
-            <nav className="flex items-center space-x-6" aria-label="Main navigation">
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-6" aria-label="Main navigation">
               <Link
                 href="/"
                 className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
@@ -69,8 +75,66 @@ export default function Header() {
                 Mint NFT
               </Link>
             </nav>
+
+            {/* Mobile menu button */}
+            <button
+              type="button"
+              className="md:hidden p-2 text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink rounded"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle mobile menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <div className="md:hidden glass border-t border-white/10">
+            <nav className="px-4 py-4 space-y-3" aria-label="Mobile navigation">
+              <Link
+                href="/"
+                className="block text-sm text-text-muted hover:text-foreground transition-colors px-2 py-2 rounded"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <Link
+                href="/how-it-works"
+                className="block text-sm text-text-muted hover:text-foreground transition-colors px-2 py-2 rounded"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                How It Works
+              </Link>
+              <Link
+                href="/tiers"
+                className="block text-sm text-text-muted hover:text-foreground transition-colors px-2 py-2 rounded"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Tiers
+              </Link>
+              <Link
+                href="/gallery"
+                className="block text-sm text-text-muted hover:text-foreground transition-colors px-2 py-2 rounded"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Gallery
+              </Link>
+              <Link
+                href="/mint"
+                className="block px-6 py-2 bg-gradient-to-r from-parity-pink to-parity-purple rounded-full text-sm font-medium text-center hover:opacity-90 transition-opacity"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Mint NFT
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
     </>
   );
