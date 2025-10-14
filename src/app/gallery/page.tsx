@@ -168,7 +168,7 @@ export default function GalleryPage() {
 
                   return (
                     <div
-                      key={nft.nft_id}
+                      key={nft.id}
                       className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg overflow-hidden hover:border-pink-500/50 transition-all duration-300"
                     >
                       {/* NFT Viewer */}

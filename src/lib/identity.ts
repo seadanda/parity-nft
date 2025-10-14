@@ -123,10 +123,6 @@ export async function getIdentity(accountId: string): Promise<IdentityInfo> {
     // Extract display name
     const displayField = identityData.info.display;
 
-    // Log the actual structure for debugging
-    console.log('[identity] Display field type:', typeof displayField);
-    console.log('[identity] Display field:', displayField);
-
     let displayName = decodeIdentityData(displayField);
 
     // Clean up the display name (remove extra quotes, whitespace)
@@ -209,7 +205,6 @@ export async function getIdentitiesBatch(accountIds: string[]): Promise<Map<stri
       if (identityData) {
         try {
           const displayField = identityData.info.display;
-          console.log('[identity] Batch display field for', accountId, ':', displayField);
           displayName = decodeIdentityData(displayField);
           displayName = displayName.trim().replace(/^["']|["']$/g, '');
 

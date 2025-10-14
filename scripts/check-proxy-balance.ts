@@ -7,25 +7,27 @@
 import { createClient } from "polkadot-api"
 import { getWsProvider } from "polkadot-api/ws-provider/node"
 import { dot } from "@polkadot-api/descriptors"
-import { cryptoWaitReady, sr25519PairFromSeed, encodeAddress } from '@polkadot/util-crypto';
-import { mnemonicToMiniSecret, mnemonicValidate } from '@polkadot/util-crypto';
-import { stringToU8a } from '@polkadot/util';
+import { sr25519CreateDerive } from "@polkadot-labs/hdkd"
+import { DEV_PHRASE, entropyToMiniSecret, mnemonicToEntropy, validateMnemonic, ss58Address } from "@polkadot-labs/hdkd-helpers"
 
 /**
- * Helper to create a keypair from seed phrase or derivation path
+ * Helper to create a keypair from seed phrase using PAPI's hdkd
  */
-async function createKeypairFromSeed(seed: string) {
-  await cryptoWaitReady();
-
+function createKeypairFromSeed(seed: string) {
   // Check if it's a mnemonic
-  if (mnemonicValidate(seed)) {
-    const miniSecret = mnemonicToMiniSecret(seed);
-    return sr25519PairFromSeed(miniSecret);
+  if (validateMnemonic(seed)) {
+    const entropy = mnemonicToEntropy(seed);
+    const miniSecret = entropyToMiniSecret(entropy);
+    const derive = sr25519CreateDerive(miniSecret);
+    // Return the root keypair (no derivation path)
+    return derive("");
   }
 
-  // Otherwise treat as derivation path (e.g., //Alice)
-  const seedU8a = stringToU8a(seed.padEnd(32, ' '));
-  return sr25519PairFromSeed(seedU8a.slice(0, 32));
+  // Otherwise treat as derivation path (e.g., //Alice) from dev phrase
+  const entropy = mnemonicToEntropy(DEV_PHRASE);
+  const miniSecret = entropyToMiniSecret(entropy);
+  const derive = sr25519CreateDerive(miniSecret);
+  return derive(seed);
 }
 
 async function checkProxyBalance() {
@@ -48,8 +50,8 @@ async function checkProxyBalance() {
     const api = client.getTypedApi(dot);
 
     // Create keypair from seed
-    const pair = await createKeypairFromSeed(PROXY_SEED);
-    const address = encodeAddress(pair.publicKey, 0); // Polkadot prefix
+    const keyPair = createKeypairFromSeed(PROXY_SEED);
+    const address = ss58Address(keyPair.publicKey, 0); // Polkadot prefix
 
     console.log(`Proxy Address: ${address}\n`);
 

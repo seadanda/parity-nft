@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
+import { ss58Decode, ss58Encode } from '@polkadot-labs/hdkd-helpers';
 
 // Polkadot SS58 address validation
 // SS58 addresses start with specific characters and have specific lengths
@@ -14,12 +14,13 @@ const MIN_BALANCE_PLANCK = BigInt('1000000000'); // 0.1 DOT (10^9 planck = 0.1 D
  */
 export function isValidPolkadotAddress(address: string): boolean {
   try {
-    // Decode the address to get the public key
-    const decoded = decodeAddress(address);
+    // Decode the address to get the public key and prefix
+    // ss58Decode returns a tuple: [payload: Uint8Array, prefix: number]
+    const [payload, prefix] = ss58Decode(address);
 
     // Re-encode with Polkadot prefix (0) to verify format
     // This ensures the address is a valid Polkadot address (not Kusama, etc.)
-    const reEncoded = encodeAddress(decoded, 0);
+    const reEncoded = ss58Encode(payload, 0);
 
     return address === reEncoded || address.startsWith('1'); // Polkadot addresses start with '1'
   } catch {
