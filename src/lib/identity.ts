@@ -50,7 +50,7 @@ export async function getIdentity(accountId: string): Promise<IdentityInfo> {
     }
 
     // Extract the identity data
-    const identity = identityOption.unwrap();
+    const identity = (identityOption as any).unwrap();
 
     // Access the info.display field
     // The display field is a Data type that can be Raw, None, or other variants
@@ -139,7 +139,7 @@ export async function getIdentitiesBatch(accountIds: string[]): Promise<Map<stri
 
       if (!identityOption.isEmpty) {
         try {
-          const identity = identityOption.unwrap();
+          const identity = (identityOption as any).unwrap();
           const info = (identity as any).info;
           const displayData = info.display;
 
