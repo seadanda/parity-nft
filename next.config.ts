@@ -32,10 +32,11 @@ const nextConfig: NextConfig = {
   // Webpack configuration for native modules
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Externalize native Node.js modules that can't be bundled
+      // Externalize native Node.js modules and ws package that can't be bundled
       config.externals.push({
         'bufferutil': 'commonjs bufferutil',
         'utf-8-validate': 'commonjs utf-8-validate',
+        'ws': 'commonjs ws',
       });
     }
     return config;

@@ -101,14 +101,15 @@ export async function getIdentity(accountId: string): Promise<IdentityInfo> {
 
   // Dynamic imports to avoid bundling Node.js-specific code in the client
   const { createClient } = await import("polkadot-api");
-  const { getWsProvider } = await import("polkadot-api/ws-provider/node");
+  const { getVercelWsProvider } = await import("./ws-provider-vercel");
   const { people } = await import("@polkadot-api/descriptors");
 
   let client: ReturnType<typeof createClient> | null = null;
 
   try {
-    // Create client and typed API
-    client = createClient(getWsProvider(PEOPLE_CHAIN_RPC));
+    // Create client and typed API using Vercel-compatible provider
+    const provider = await getVercelWsProvider(PEOPLE_CHAIN_RPC);
+    client = createClient(provider);
     const api = client.getTypedApi(people);
 
     // Query identity
@@ -179,13 +180,14 @@ export async function getIdentitiesBatch(accountIds: string[]): Promise<Map<stri
 
   // Dynamic imports to avoid bundling Node.js-specific code in the client
   const { createClient } = await import("polkadot-api");
-  const { getWsProvider } = await import("polkadot-api/ws-provider/node");
+  const { getVercelWsProvider } = await import("./ws-provider-vercel");
   const { people } = await import("@polkadot-api/descriptors");
 
   let client: ReturnType<typeof createClient> | null = null;
 
   try {
-    client = createClient(getWsProvider(PEOPLE_CHAIN_RPC));
+    const provider = await getVercelWsProvider(PEOPLE_CHAIN_RPC);
+    client = createClient(provider);
     const api = client.getTypedApi(people);
 
     // Query all identities in parallel

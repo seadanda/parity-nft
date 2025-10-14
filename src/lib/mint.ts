@@ -1,6 +1,6 @@
 import { createClient, Binary } from "polkadot-api"
-import { getWsProvider } from "polkadot-api/ws-provider/node"
 import { dot } from "@polkadot-api/descriptors"
+import { getVercelWsProvider } from "./ws-provider-vercel"
 import { getPolkadotSigner } from "polkadot-api/signer"
 import { sr25519CreateDerive } from "@polkadot-labs/hdkd"
 import { DEV_PHRASE, entropyToMiniSecret, mnemonicToEntropy, validateMnemonic, sr25519, ss58Address } from "@polkadot-labs/hdkd-helpers"
@@ -103,8 +103,9 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
   let client: ReturnType<typeof createClient> | null = null;
 
   try {
-    // Connect to Asset Hub
-    client = createClient(getWsProvider(ASSET_HUB_WS));
+    // Connect to Asset Hub using Vercel-compatible provider
+    const provider = await getVercelWsProvider(ASSET_HUB_WS);
+    client = createClient(provider);
     const api = client.getTypedApi(dot);
 
     // Create keypair from seed for the asset manager proxy account

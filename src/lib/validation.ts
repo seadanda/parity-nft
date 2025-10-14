@@ -61,7 +61,7 @@ export async function checkAccountBalance(
 ): Promise<{ hasBalance: boolean; balance: string; balancePlanck: bigint }> {
   // Dynamic import to avoid bundling Node.js-specific code in the client
   const { createClient } = await import("polkadot-api");
-  const { getWsProvider } = await import("polkadot-api/ws-provider/node");
+  const { getVercelWsProvider } = await import("./ws-provider-vercel");
   const { dot } = await import("@polkadot-api/descriptors");
 
   let client: ReturnType<typeof createClient> | null = null;
@@ -76,8 +76,9 @@ export async function checkAccountBalance(
 
     console.log(`[checkAccountBalance] Using RPC: ${rpcEndpoint}`);
 
-    // Create client and typed API
-    client = createClient(getWsProvider(rpcEndpoint));
+    // Create client and typed API using Vercel-compatible provider
+    const provider = await getVercelWsProvider(rpcEndpoint);
+    client = createClient(provider);
     const api = client.getTypedApi(dot);
 
     // Query account balance
