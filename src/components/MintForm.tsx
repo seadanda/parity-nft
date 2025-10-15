@@ -13,6 +13,7 @@ import { getSubscanLink, formatHash } from '@/lib/utils';
 import TierViewer from './TierViewer';
 import { Check, Loader2, Circle, ExternalLink } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
+import { ss58Encode, ss58Decode } from '@polkadot-labs/hdkd-helpers';
 
 type MintStatus = 'idle' | 'validating' | 'checking_identity' | 'checking_balance' | 'minting' | 'in_block' | 'finalized' | 'success' | 'error';
 type MintStep = 'email' | 'code' | 'mint';
@@ -75,9 +76,20 @@ export default function MintForm() {
   });
 
   // Auto-fill wallet address when wallet connects (on mint step)
+  // Convert to Polkadot SS58 format (prefix 0)
   useEffect(() => {
     if (isConnected && selectedAccount) {
-      setValue('walletAddress', selectedAccount.address);
+      try {
+        // Decode the address from whatever format it's in
+        const [publicKey] = ss58Decode(selectedAccount.address);
+        // Re-encode with Polkadot prefix (0)
+        const polkadotAddress = ss58Encode(publicKey, 0);
+        setValue('walletAddress', polkadotAddress, { shouldValidate: true });
+      } catch (error) {
+        console.error('Failed to convert address to Polkadot format:', error);
+        // Fallback to original address
+        setValue('walletAddress', selectedAccount.address, { shouldValidate: true });
+      }
     }
   }, [isConnected, selectedAccount, setValue]);
 
@@ -141,13 +153,6 @@ export default function MintForm() {
     }
   };
 
-  const handleResendCode = () => {
-    setCode('');
-    setError(null);
-    setEmailMessage(null);
-    const fakeEvent = new Event('submit') as any;
-    handleRequestCode(fakeEvent);
-  };
 
   const onMint = async (data: MintFormData) => {
     setIsSubmitting(true);
@@ -357,11 +362,11 @@ export default function MintForm() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={handleResendCode}
+                onClick={() => setStep('email')}
                 disabled={isSubmitting}
                 className="flex-1"
               >
-                Resend Code
+                Change Email
               </Button>
               <Button
                 type="submit"
@@ -426,6 +431,9 @@ export default function MintForm() {
           </div>
 
           <form onSubmit={handleSubmit(onMint)} className="space-y-6">
+            {/* Hidden wallet address field for form submission */}
+            <input type="hidden" {...register('walletAddress')} />
+
             {/* Minting Status Checks */}
             {isSubmitting && (
               <div className="space-y-2 p-4 rounded-xl bg-background/50 border border-white/10">
@@ -530,10 +538,6 @@ export default function MintForm() {
         title="🎊 NFT Minted Successfully!"
       >
         <div className="space-y-6">
-          <p className="text-text-muted">
-            Congratulations! Your 10 Years of Parity NFT has been successfully minted.
-          </p>
-
           {successData && (
             <div className="space-y-4">
               {/* NFT Preview */}

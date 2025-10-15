@@ -148,7 +148,7 @@ export default function HowItWorksPage() {
             The Minting Flow
           </h2>
           <div className="space-y-6">
-            {/* Step 1: Whitelist */}
+            {/* Step 1: Enter Email */}
             <Card glass className="p-8">
               <div className="flex items-start gap-6">
                 <div className="flex-shrink-0">
@@ -159,25 +159,24 @@ export default function HowItWorksPage() {
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
                     <Mail className="w-6 h-6" />
-                    Email Whitelist Verification
+                    Enter Your Email Address
                   </h3>
                   <p className="text-text-muted mb-4">
-                    Only pre-approved email addresses can participate in this exclusive mint. We use email verification to ensure fair distribution among Parity team members and partners.
+                    Only pre-approved email addresses can participate in this exclusive mint. Enter your email address to begin the verification process.
                   </p>
                   <div className="bg-background/50 rounded-lg p-4 border border-border">
-                    <h4 className="font-semibold mb-2 text-sm">How it works:</h4>
-                    <ol className="space-y-2 text-sm text-text-muted ml-4 list-decimal">
-                      <li>Enter your email address</li>
-                      <li>Receive a 6-digit verification code (valid for 10 minutes)</li>
-                      <li>Enter the code to authenticate</li>
+                    <h4 className="font-semibold mb-2 text-sm">What happens:</h4>
+                    <ul className="space-y-2 text-sm text-text-muted ml-4 list-disc">
+                      <li>A 6-digit verification code is sent to your email</li>
+                      <li>Code is valid for 10 minutes</li>
                       <li>One mint per email address</li>
-                    </ol>
+                    </ul>
                   </div>
                 </div>
               </div>
             </Card>
 
-            {/* Step 2: Mint */}
+            {/* Step 2: Enter Verification Code */}
             <Card glass className="p-8">
               <div className="flex items-start gap-6">
                 <div className="flex-shrink-0">
@@ -187,8 +186,36 @@ export default function HowItWorksPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
+                    <Shield className="w-6 h-6" />
+                    Enter Verification Code
+                  </h3>
+                  <p className="text-text-muted mb-4">
+                    Check your email for the 6-digit verification code and enter it to authenticate your session.
+                  </p>
+                  <div className="bg-background/50 rounded-lg p-4 border border-border">
+                    <h4 className="font-semibold mb-2 text-sm">Security:</h4>
+                    <ul className="space-y-2 text-sm text-text-muted ml-4 list-disc">
+                      <li>Code expires after 10 minutes</li>
+                      <li>One-time use only</li>
+                      <li>Your email is verified against the whitelist</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Step 3: Connect Wallet and Mint */}
+            <Card glass className="p-8">
+              <div className="flex items-start gap-6">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-parity-indigo to-parity-cyan flex items-center justify-center text-white font-bold text-xl">
+                    3
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
                     <Sparkles className="w-6 h-6" />
-                    Mint Your NFT
+                    Connect Wallet and Mint NFT
                   </h3>
                   <p className="text-text-muted mb-4">
                     Connect your Polkadot wallet and mint your unique NFT to Polkadot Asset Hub. Each NFT receives a deterministic hash that generates its visual properties.
@@ -201,35 +228,7 @@ export default function HowItWorksPage() {
                       <li>NFT is minted on Polkadot Asset Hub (Parachain 1000)</li>
                       <li>Transfer is immediately locked (soulbound token)</li>
                       <li>Metadata with your hash is stored on-chain</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Step 3: View */}
-            <Card glass className="p-8">
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-parity-indigo to-parity-cyan flex items-center justify-center text-white font-bold text-xl">
-                    3
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
-                    <Eye className="w-6 h-6" />
-                    View Your NFT
-                  </h3>
-                  <p className="text-text-muted mb-4">
-                    Your NFT can be viewed on multiple platforms. The 3D visualization is rendered in real-time from your unique hash.
-                  </p>
-                  <div className="bg-background/50 rounded-lg p-4 border border-border">
-                    <h4 className="font-semibold mb-2 text-sm">Where to view:</h4>
-                    <ul className="space-y-2 text-sm text-text-muted ml-4 list-disc">
-                      <li><strong>Subscan</strong> - View on-chain details and transaction history</li>
-                      <li><strong>Nova Wallet</strong> - Mobile wallet with NFT gallery</li>
-                      <li><strong>KodaDot</strong> - NFT marketplace with metadata display</li>
-                      <li><strong>3D Viewer</strong> - Interactive WebGL visualization (this site)</li>
+                      <li>View your NFT on Subscan, Nova Wallet, KodaDot, or this site's 3D viewer</li>
                     </ul>
                   </div>
                 </div>
@@ -265,7 +264,7 @@ export default function HowItWorksPage() {
                 </h3>
                 <ul className="space-y-2 text-text-muted text-sm ml-6 list-disc">
                   <li><strong>Polkadot Asset Hub</strong> - System parachain for NFTs</li>
-                  <li><strong>@polkadot/api</strong> - JavaScript SDK</li>
+                  <li><strong>Polkadot API (PAPI)</strong> - Modern TypeScript SDK</li>
                   <li><strong>pallet-nfts</strong> - On-chain NFT functionality</li>
                   <li><strong>pallet-proxy</strong> - Secure minting pattern</li>
                   <li><strong>IPFS</strong> - Decentralized metadata storage</li>
@@ -1646,6 +1645,165 @@ api.tx.nfts.setMetadata(
           </Card>
         </section>
 
+        {/* Built with Polkadot API (PAPI) */}
+        <section className="mb-16">
+          <Card glass className="p-8">
+            <h2 className="text-3xl font-bold mb-6 text-gradient-pink-purple flex items-center gap-2">
+              <Code2 className="w-8 h-8" />
+              Built with Polkadot API (PAPI)
+            </h2>
+            <p className="text-lg text-text-muted mb-6">
+              This project uses the modern <strong>Polkadot API (PAPI)</strong> instead of the legacy @polkadot/api. PAPI is a next-generation TypeScript library that provides a more efficient, type-safe, and lightweight way to interact with Polkadot chains.
+            </p>
+
+            <div className="bg-background/50 rounded-lg p-6 border border-border mb-6">
+              <h3 className="text-xl font-bold mb-3">Why PAPI?</h3>
+              <ul className="space-y-2 text-text-muted ml-6 list-disc">
+                <li><strong>Modern architecture</strong> - Built from the ground up with TypeScript and modern web standards</li>
+                <li><strong>Smaller bundle size</strong> - Significantly reduced JavaScript payload compared to legacy API</li>
+                <li><strong>Better type safety</strong> - Full TypeScript support with auto-generated types from chain metadata</li>
+                <li><strong>Future-proof</strong> - Actively maintained and the recommended approach for new Polkadot projects</li>
+              </ul>
+              <p className="text-sm text-text-muted mt-4">
+                Learn more at{' '}
+                <a
+                  href="https://papi.how"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-parity-cyan hover:text-parity-pink transition-colors underline"
+                >
+                  papi.how
+                </a>
+              </p>
+            </div>
+
+            <div className="bg-parity-indigo/10 border border-parity-indigo/30 rounded-lg p-6">
+              <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                <GitBranch className="w-5 h-5 text-parity-cyan" />
+                Development Story with Claude Code
+              </h3>
+              <p className="text-text-muted mb-4">
+                This project initially used @polkadot/api (also known as PJS or Polkadot-JS API), but we successfully migrated to PAPI with the help of <strong>Claude Code's autonomous agents</strong>.
+              </p>
+
+              <div className="space-y-4">
+                <div className="bg-background/30 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2 text-sm text-parity-pink">The Migration Process</h4>
+                  <ol className="space-y-2 text-sm text-text-muted ml-4 list-decimal">
+                    <li><strong>Described the goal:</strong> Migrate from @polkadot/api to PAPI for better performance</li>
+                    <li><strong>Claude made a plan:</strong> Identified all PJS usage, analyzed dependencies, created migration strategy</li>
+                    <li><strong>Established success criteria:</strong> Zero @polkadot/* dependencies in package.json, all tests passing</li>
+                    <li><strong>Executed the migration:</strong> Claude Code autonomously updated imports, API calls, and types across the codebase</li>
+                  </ol>
+                </div>
+
+                <div className="bg-background/30 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2 text-sm text-parity-purple">The Result</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                    <div className="bg-background/50 rounded p-3 border border-border">
+                      <div className="text-2xl font-bold text-parity-pink mb-1">76%</div>
+                      <div className="text-xs text-text-muted">Bundle size reduction on mint page</div>
+                      <div className="text-xs text-text-muted mt-1 font-mono">227 kB → 54.9 kB</div>
+                    </div>
+                    <div className="bg-background/50 rounded p-3 border border-border">
+                      <div className="text-2xl font-bold text-parity-purple mb-1">0</div>
+                      <div className="text-xs text-text-muted">Legacy PJS dependencies remaining</div>
+                      <div className="text-xs text-text-muted mt-1">Complete migration achieved</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-background/30 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2 text-sm text-parity-cyan">How Claude Code Helped</h4>
+                  <p className="text-sm text-text-muted mb-2">
+                    Claude Code's autonomous agents were instrumental in handling this complex, multi-step migration:
+                  </p>
+                  <ul className="space-y-1 text-sm text-text-muted ml-4 list-disc">
+                    <li>Searched the entire codebase to find all PJS usage patterns</li>
+                    <li>Updated API initialization code to use PAPI's modern approach</li>
+                    <li>Converted transaction building from PJS format to PAPI format</li>
+                    <li>Fixed TypeScript types to match PAPI's type system</li>
+                    <li>Verified success by checking package.json and running tests</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </section>
+
+        {/* Turso Database Security */}
+        <section className="mb-16">
+          <Card glass className="p-8">
+            <h2 className="text-3xl font-bold mb-6 text-gradient-pink-purple flex items-center gap-2">
+              <Lock className="w-8 h-8" />
+              Turso Database Security
+            </h2>
+            <p className="text-lg text-text-muted mb-6">
+              Email verification data is stored in a{' '}
+              <a
+                href="https://turso.tech"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-parity-cyan hover:text-parity-pink transition-colors underline"
+              >
+                Turso database
+              </a>
+              {' '}with enterprise-grade encryption to ensure your data remains secure.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-background/50 rounded-lg p-6 border border-border">
+                <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                  <Database className="w-5 h-5 text-parity-pink" />
+                  Encryption Features
+                </h3>
+                <ul className="space-y-3 text-text-muted text-sm">
+                  <li className="flex items-start">
+                    <span className="text-parity-cyan mr-2">•</span>
+                    <span><strong>Page-level encryption:</strong> Each 4 KiB database page is encrypted individually using AEAD ciphers (AEGIS-256 or AES-256-GCM)</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-parity-cyan mr-2">•</span>
+                    <span><strong>Encryption at rest:</strong> Database files and Write-Ahead Logs are encrypted on disk</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-parity-cyan mr-2">•</span>
+                    <span><strong>Key security:</strong> Encryption keys are never stored on disk</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-background/50 rounded-lg p-6 border border-border">
+                <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-parity-purple" />
+                  Privacy by Design
+                </h3>
+                <p className="text-text-muted text-sm mb-3">
+                  Your email is <strong>NOT</strong> stored with your mint record on the blockchain. Email addresses are only used for session verification and are kept separate from your NFT data.
+                </p>
+                <p className="text-text-muted text-sm">
+                  This separation ensures that your email remains private and is not publicly associated with your wallet address or NFT.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-parity-cyan/10 rounded-lg p-4 border border-parity-cyan/30">
+              <p className="text-sm text-text-muted">
+                Learn more about{' '}
+                <a
+                  href="https://docs.turso.tech/tursodb/encryption"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-parity-cyan hover:text-parity-pink transition-colors underline"
+                >
+                  Turso's encryption features
+                </a>
+                {' '}and how your data is protected.
+              </p>
+            </div>
+          </Card>
+        </section>
+
         {/* Technical Details (Collapsible) */}
         <section className="mb-16">
           <Card glass className="p-8">
@@ -1810,55 +1968,6 @@ api.tx.nfts.setMetadata(
                   <h3 className="text-lg font-bold mb-2">Can I mint multiple NFTs?</h3>
                   <p className="text-text-muted text-sm">
                     No. This is an exclusive drop limited to one NFT per whitelisted email address.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                    <Lock className="w-5 h-5 text-parity-cyan" />
-                    How is my data secured?
-                  </h3>
-                  <p className="text-text-muted text-sm mb-3">
-                    We take data security seriously. Email verification data is stored in a{' '}
-                    <a
-                      href="https://turso.tech"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-parity-cyan hover:text-parity-pink transition-colors underline"
-                    >
-                      Turso database
-                    </a>
-                    {' '}with enterprise-grade encryption:
-                  </p>
-                  <ul className="text-text-muted text-sm space-y-2 ml-4 mb-3">
-                    <li className="flex items-start">
-                      <span className="text-parity-cyan mr-2">•</span>
-                      <span><strong>Page-level encryption:</strong> Each 4 KiB database page is encrypted individually using AEAD ciphers (AEGIS-256 or AES-256-GCM)</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-parity-cyan mr-2">•</span>
-                      <span><strong>Encryption at rest:</strong> Database files and Write-Ahead Logs are encrypted on disk</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-parity-cyan mr-2">•</span>
-                      <span><strong>Key security:</strong> Encryption keys are never stored on disk</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-parity-cyan mr-2">•</span>
-                      <span><strong>Privacy by design:</strong> Your email is NOT stored with the mint record - only in session verification</span>
-                    </li>
-                  </ul>
-                  <p className="text-text-muted text-xs">
-                    Learn more about{' '}
-                    <a
-                      href="https://docs.turso.tech/tursodb/encryption"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-parity-cyan hover:text-parity-pink transition-colors underline"
-                    >
-                      Turso's encryption features
-                    </a>
-                    .
                   </p>
                 </div>
 
