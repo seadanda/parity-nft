@@ -4,11 +4,36 @@ import { getIdentity, getIdentitiesBatch } from '@/lib/identity';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { address } = body;
+    const { address, addresses } = body;
 
+    // Batch request
+    if (addresses && Array.isArray(addresses)) {
+      if (addresses.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'No valid addresses provided' },
+          { status: 400 }
+        );
+      }
+
+      const identitiesMap = await getIdentitiesBatch(addresses);
+
+      // Convert Map to array of objects
+      const identitiesArray = Array.from(identitiesMap.entries()).map(([addr, display]) => ({
+        address: addr,
+        display: display,
+        hasIdentity: !!display
+      }));
+
+      return NextResponse.json({
+        success: true,
+        identities: identitiesArray
+      });
+    }
+
+    // Single address request
     if (!address) {
       return NextResponse.json(
-        { success: false, error: 'Address is required' },
+        { success: false, error: 'Address or addresses array is required' },
         { status: 400 }
       );
     }

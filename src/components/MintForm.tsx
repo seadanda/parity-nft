@@ -1,20 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Wallet } from 'lucide-react';
+import { Wallet, Mail, KeyRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { Button, Input, Modal, Card } from '@/components/ui';
 import { mintFormSchema, type MintFormData } from '@/lib/validation';
 import { type MintResponse } from '@/lib/api';
 import { getSubscanLink, formatHash } from '@/lib/utils';
-import EmailVerification from './EmailVerification';
 import TierViewer from './TierViewer';
 import { Check, Loader2, Circle, ExternalLink } from 'lucide-react';
+import { useWallet } from '@/contexts/WalletContext';
 
 type MintStatus = 'idle' | 'validating' | 'checking_identity' | 'checking_balance' | 'minting' | 'in_block' | 'finalized' | 'success' | 'error';
+type MintStep = 'email' | 'code' | 'mint';
 
 // Status Check Component
 function StatusCheck({
@@ -45,10 +46,11 @@ function StatusCheck({
 
 export default function MintForm() {
   const router = useRouter();
+  const { selectedAccount, isConnected, connectWallet, availableExtensions } = useWallet();
+  const [step, setStep] = useState<MintStep>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<MintResponse | null>(null);
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState('');
   const [sessionToken, setSessionToken] = useState('');
   const [mintStatus, setMintStatus] = useState<MintStatus>('idle');
@@ -56,6 +58,11 @@ export default function MintForm() {
   const [extrinsicId, setExtrinsicId] = useState<string | null>(null);
   const [accountBalance, setAccountBalance] = useState<string | null>(null);
   const [identityName, setIdentityName] = useState<string | null>(null);
+
+  // Email verification state
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [emailMessage, setEmailMessage] = useState<string | null>(null);
 
   const {
     register,
@@ -67,14 +74,82 @@ export default function MintForm() {
     resolver: zodResolver(mintFormSchema),
   });
 
-  const handleEmailVerified = (email: string, token: string) => {
-    setVerifiedEmail(email);
-    setSessionToken(token);
-    setIsEmailVerified(true);
-    setValue('email', email);
+  // Auto-fill wallet address when wallet connects (on mint step)
+  useEffect(() => {
+    if (isConnected && selectedAccount) {
+      setValue('walletAddress', selectedAccount.address);
+    }
+  }, [isConnected, selectedAccount, setValue]);
+
+  const handleRequestCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+    setEmailMessage(null);
+
+    try {
+      const response = await fetch('/api/auth/request-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase().trim() })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send code');
+      }
+
+      setEmailMessage(data.message);
+      setStep('code');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const onSubmit = async (data: MintFormData) => {
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.toLowerCase().trim(),
+          code: code.trim()
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid code');
+      }
+
+      setVerifiedEmail(data.email);
+      setSessionToken(data.sessionToken);
+      setValue('email', data.email);
+      setStep('mint');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid code');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendCode = () => {
+    setCode('');
+    setError(null);
+    setEmailMessage(null);
+    const fakeEvent = new Event('submit') as any;
+    handleRequestCode(fakeEvent);
+  };
+
+  const onMint = async (data: MintFormData) => {
     setIsSubmitting(true);
     setError(null);
     setAccountBalance(null);
@@ -195,37 +270,162 @@ export default function MintForm() {
     reset();
   };
 
-  // Show email verification step first
-  if (!isEmailVerified) {
-    return <EmailVerification onVerified={handleEmailVerified} />;
+  // Step 1: Enter Email
+  if (step === 'email') {
+    return (
+      <Card glass>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Verify Your Email</h2>
+            <p className="text-text-muted">
+              Enter your email to receive a verification code.
+            </p>
+          </div>
+
+          <form onSubmit={handleRequestCode} className="space-y-4">
+            <Input
+              label="Email Address"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your.email@parity.io"
+              icon={<Mail className="w-5 h-5" />}
+              required
+              disabled={isSubmitting}
+            />
+
+            {error && (
+              <div className="p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm">
+                {error}
+              </div>
+            )}
+
+            {emailMessage && (
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm">
+                {emailMessage}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              loading={isSubmitting}
+              className="w-full"
+              disabled={isSubmitting || !email}
+            >
+              Send Verification Code
+            </Button>
+          </form>
+        </div>
+      </Card>
+    );
   }
 
+  // Step 2: Enter Code
+  if (step === 'code') {
+    return (
+      <Card glass>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Enter Verification Code</h2>
+            <p className="text-text-muted">
+              We sent a 6-digit code to <strong>{email}</strong>
+            </p>
+          </div>
+
+          <form onSubmit={handleVerifyCode} className="space-y-4">
+            <Input
+              label="Verification Code"
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="000000"
+              icon={<KeyRound className="w-5 h-5" />}
+              maxLength={6}
+              required
+              disabled={isSubmitting}
+            />
+
+            {error && (
+              <div className="p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleResendCode}
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                Resend Code
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                loading={isSubmitting}
+                disabled={isSubmitting || code.length !== 6}
+                className="flex-1"
+              >
+                Verify
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Card>
+    );
+  }
+
+  // Step 3: Mint NFT
   return (
     <>
       <Card glass>
         <div className="space-y-6">
+          {/* Connected Wallet Badge or Warning */}
+          {isConnected && selectedAccount ? (
+            <div className="p-4 rounded-xl bg-parity-pink/10 border border-parity-pink/30">
+              <div className="flex items-center gap-3">
+                <Wallet className="w-5 h-5 text-parity-pink flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm text-parity-pink/80 mb-1">Connected Wallet</p>
+                  {selectedAccount.name && (
+                    <p className="font-medium text-sm mb-1">{selectedAccount.name}</p>
+                  )}
+                  <p className="text-xs font-mono text-text-muted break-all">
+                    {selectedAccount.address}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-error/10 border border-error/30">
+              <div className="flex items-center gap-3">
+                <Wallet className="w-5 h-5 text-error flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-error mb-1">No Wallet Connected</p>
+                  <p className="text-xs text-error/80">
+                    Please connect your wallet using the button in the top right corner to continue minting.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Verified Email Badge */}
           <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-400/80">You're In</p>
+                <p className="text-sm text-green-400/80">Verified Email</p>
                 <p className="font-medium text-green-100">{verifiedEmail}</p>
               </div>
               <div className="text-2xl text-green-400">✓</div>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Wallet Address Input */}
-            <Input
-              label="Polkadot Wallet Address"
-              type="text"
-              placeholder="15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5"
-              icon={<Wallet className="w-5 h-5" />}
-              error={errors.walletAddress?.message}
-              {...register('walletAddress')}
-            />
-
+          <form onSubmit={handleSubmit(onMint)} className="space-y-6">
             {/* Minting Status Checks */}
             {isSubmitting && (
               <div className="space-y-2 p-4 rounded-xl bg-background/50 border border-white/10">
@@ -299,10 +499,26 @@ export default function MintForm() {
               size="lg"
               loading={isSubmitting}
               className="w-full"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isConnected || !selectedAccount}
             >
               {isSubmitting ? 'Minting...' : 'Mint NFT'}
             </Button>
+
+            {/* Privacy Warning - Moved under button */}
+            <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
+              <div className="flex gap-3">
+                <div className="text-yellow-400 text-xl flex-shrink-0">⚠️</div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-yellow-100 mb-2">Privacy Notice</p>
+                  <p className="text-xs text-yellow-200/80 leading-relaxed">
+                    Minting this NFT will publicly link your wallet address to your on-chain identity,
+                    which may identify you as a Parity employee or contributor. Your email address will
+                    <strong className="text-yellow-100"> never be stored</strong> with the mint record
+                    and remains private.
+                  </p>
+                </div>
+              </div>
+            </div>
           </form>
         </div>
       </Card>

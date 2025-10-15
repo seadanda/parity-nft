@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import WalletConnect from './WalletConnect';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -38,43 +39,46 @@ export default function Header() {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-6" aria-label="Main navigation">
-              <Link
-                href="/"
-                className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
-                aria-label="Go to home page"
-              >
-                Home
-              </Link>
-              <Link
-                href="/how-it-works"
-                className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
-                aria-label="Learn how the NFT system works"
-              >
-                How It Works
-              </Link>
-              <Link
-                href="/tiers"
-                className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
-                aria-label="View rarity tiers"
-              >
-                Tiers
-              </Link>
-              <Link
-                href="/gallery"
-                className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
-                aria-label="View all minted NFTs"
-              >
-                Gallery
-              </Link>
-              <Link
-                href="/mint"
-                className="px-6 py-2 bg-gradient-to-r from-parity-pink to-parity-purple rounded-full text-sm font-medium hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background"
-                aria-label="Go to NFT minting page"
-              >
-                Mint NFT
-              </Link>
-            </nav>
+            <div className="hidden md:flex items-center gap-6">
+              <nav className="flex items-center space-x-6" aria-label="Main navigation">
+                <Link
+                  href="/"
+                  className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
+                  aria-label="Go to home page"
+                >
+                  Home
+                </Link>
+                <Link
+                  href="/how-it-works"
+                  className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
+                  aria-label="Learn how the NFT system works"
+                >
+                  How It Works
+                </Link>
+                <Link
+                  href="/tiers"
+                  className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
+                  aria-label="View rarity tiers"
+                >
+                  Tiers
+                </Link>
+                <Link
+                  href="/gallery"
+                  className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
+                  aria-label="View all minted NFTs"
+                >
+                  Gallery
+                </Link>
+                <Link
+                  href="/mint"
+                  className="text-sm text-text-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-parity-pink focus:ring-offset-2 focus:ring-offset-background rounded px-2 py-1"
+                  aria-label="Mint your NFT"
+                >
+                  Mint
+                </Link>
+              </nav>
+              <WalletConnect />
+            </div>
 
             {/* Mobile menu button */}
             <button
@@ -127,11 +131,14 @@ export default function Header() {
               </Link>
               <Link
                 href="/mint"
-                className="block px-6 py-2 bg-gradient-to-r from-parity-pink to-parity-purple rounded-full text-sm font-medium text-center hover:opacity-90 transition-opacity"
+                className="block text-sm text-text-muted hover:text-foreground transition-colors px-2 py-2 rounded"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Mint NFT
+                Mint
               </Link>
+              <div className="pt-2">
+                <WalletConnect />
+              </div>
             </nav>
           </div>
         )}

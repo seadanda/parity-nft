@@ -1814,9 +1814,104 @@ api.tx.nfts.setMetadata(
                 </div>
 
                 <div>
+                  <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-parity-cyan" />
+                    How is my data secured?
+                  </h3>
+                  <p className="text-text-muted text-sm mb-3">
+                    We take data security seriously. Email verification data is stored in a{' '}
+                    <a
+                      href="https://turso.tech"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-parity-cyan hover:text-parity-pink transition-colors underline"
+                    >
+                      Turso database
+                    </a>
+                    {' '}with enterprise-grade encryption:
+                  </p>
+                  <ul className="text-text-muted text-sm space-y-2 ml-4 mb-3">
+                    <li className="flex items-start">
+                      <span className="text-parity-cyan mr-2">•</span>
+                      <span><strong>Page-level encryption:</strong> Each 4 KiB database page is encrypted individually using AEAD ciphers (AEGIS-256 or AES-256-GCM)</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-parity-cyan mr-2">•</span>
+                      <span><strong>Encryption at rest:</strong> Database files and Write-Ahead Logs are encrypted on disk</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-parity-cyan mr-2">•</span>
+                      <span><strong>Key security:</strong> Encryption keys are never stored on disk</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-parity-cyan mr-2">•</span>
+                      <span><strong>Privacy by design:</strong> Your email is NOT stored with the mint record - only in session verification</span>
+                    </li>
+                  </ul>
+                  <p className="text-text-muted text-xs">
+                    Learn more about{' '}
+                    <a
+                      href="https://docs.turso.tech/tursodb/encryption"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-parity-cyan hover:text-parity-pink transition-colors underline"
+                    >
+                      Turso's encryption features
+                    </a>
+                    .
+                  </p>
+                </div>
+
+                <div>
                   <h3 className="text-lg font-bold mb-2">Which wallets are supported?</h3>
                   <p className="text-text-muted text-sm">
                     Any Polkadot-compatible wallet that supports Asset Hub (Parachain 1000), including Polkadot.js extension, Talisman, SubWallet, Nova Wallet, and more.
+                  </p>
+                </div>
+
+                <div id="wallet-installation">
+                  <h3 className="text-lg font-bold mb-2">I don't have a wallet installed. What should I install?</h3>
+                  <p className="text-text-muted text-sm mb-3">
+                    We recommend the following wallets based on your device:
+                  </p>
+                  <div className="space-y-3">
+                    <div className="bg-background/50 rounded-lg p-4 border border-border">
+                      <h4 className="font-semibold mb-2 text-sm text-parity-pink">Mobile (iOS & Android)</h4>
+                      <p className="text-text-muted text-sm mb-2">
+                        <a
+                          href="https://novawallet.io"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-parity-cyan hover:text-parity-pink transition-colors underline font-medium"
+                        >
+                          Nova Wallet
+                        </a>
+                        {' '}- Full-featured mobile wallet with excellent support for Polkadot ecosystem
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        Available on App Store and Google Play
+                      </p>
+                    </div>
+                    <div className="bg-background/50 rounded-lg p-4 border border-border">
+                      <h4 className="font-semibold mb-2 text-sm text-parity-purple">Desktop (Browser Extension)</h4>
+                      <p className="text-text-muted text-sm mb-2">
+                        <a
+                          href="https://talisman.xyz"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-parity-cyan hover:text-parity-pink transition-colors underline font-medium"
+                        >
+                          Talisman
+                        </a>
+                        {' '}- Beautiful, user-friendly browser extension for Chrome, Firefox, and Brave
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        Install from your browser's extension store
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-text-muted mt-3">
+                    Both wallets are free, open-source, and support Asset Hub (Parachain 1000) where your NFT will be minted.
                   </p>
                 </div>
               </div>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button, Card } from '@/components/ui';
-import { Sparkles, Mail, Eye } from 'lucide-react';
+import { Sparkles, Mail } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 
@@ -127,42 +127,42 @@ export default function Home() {
             How It Works
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Step 1: Confirm Email */}
+            {/* Step 1: Enter Email */}
             <Card glass className="text-center p-8 hover:scale-105 transition-transform">
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-parity-pink to-parity-purple flex items-center justify-center">
                   <Mail className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold mb-4">1. Confirm Your Email</h3>
+              <h3 className="text-xl font-bold mb-4">1. Enter Your Email</h3>
               <p className="text-text-muted">
-                Confirm your email is included in the drop. Only whitelisted addresses can participate in this exclusive mint.
+                Enter your whitelisted email address to receive a verification code.
               </p>
             </Card>
 
-            {/* Step 2: Mint */}
+            {/* Step 2: Verify Code */}
             <Card glass className="text-center p-8 hover:scale-105 transition-transform">
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-parity-purple to-parity-indigo flex items-center justify-center">
-                  <Sparkles className="w-8 h-8 text-white" />
+                  <Mail className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold mb-4">2. Mint Your NFT</h3>
+              <h3 className="text-xl font-bold mb-4">2. Verify Code</h3>
               <p className="text-text-muted">
-                Connect your Polkadot wallet and mint your unique 3D glass logo NFT. Each NFT is randomly assigned a rarity tier.
+                Enter the 6-digit verification code sent to your inbox to confirm your eligibility.
               </p>
             </Card>
 
-            {/* Step 3: View */}
+            {/* Step 3: Mint NFT */}
             <Card glass className="text-center p-8 hover:scale-105 transition-transform">
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-parity-indigo to-parity-purple flex items-center justify-center">
-                  <Eye className="w-8 h-8 text-white" />
+                  <Sparkles className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold mb-4">3. View Your NFT</h3>
+              <h3 className="text-xl font-bold mb-4">3. Mint Your NFT</h3>
               <p className="text-text-muted">
-                View your NFT on Subscan, Nova Wallet, or KodaDot. Your NFT is soulbound and stored permanently on Polkadot Asset Hub.
+                Connect your wallet and mint your unique 3D glass logo NFT with a randomly assigned rarity tier.
               </p>
             </Card>
           </div>

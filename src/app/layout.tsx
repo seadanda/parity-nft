@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Header from "@/components/Header";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { WalletProvider } from "@/contexts/WalletContext";
 
 const unbounded = Unbounded({
   weight: "900",
@@ -38,12 +39,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${unbounded.variable} antialiased`}>
-        <ErrorBoundary>
-          <Header />
-          <main id="main-content">
-            {children}
-          </main>
-        </ErrorBoundary>
+        <WalletProvider>
+          <ErrorBoundary>
+            <Header />
+            <main id="main-content">
+              {children}
+            </main>
+          </ErrorBoundary>
+        </WalletProvider>
         <Analytics />
         <SpeedInsights />
       </body>
