@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button, Card } from '@/components/ui';
-import { Sparkles, Mail } from 'lucide-react';
+import { Sparkles, Mail, Wallet, ExternalLink } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 
@@ -127,42 +127,42 @@ export default function Home() {
             How It Works
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Step 1: Enter Email */}
+            {/* Step 1: Confirm Email */}
             <Card glass className="text-center p-8 hover:scale-105 transition-transform">
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-parity-pink to-parity-purple flex items-center justify-center">
                   <Mail className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold mb-4">1. Enter Your Email</h3>
+              <h3 className="text-xl font-bold mb-4">1. Confirm Your Email</h3>
               <p className="text-text-muted">
-                Enter your whitelisted email address to receive a verification code.
+                Enter your whitelisted email and verify it with the 6-digit code sent to your inbox.
               </p>
             </Card>
 
-            {/* Step 2: Verify Code */}
+            {/* Step 2: Connect Wallet */}
             <Card glass className="text-center p-8 hover:scale-105 transition-transform">
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-parity-purple to-parity-indigo flex items-center justify-center">
-                  <Mail className="w-8 h-8 text-white" />
+                  <Wallet className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold mb-4">2. Verify Code</h3>
+              <h3 className="text-xl font-bold mb-4">2. Connect Your Wallet</h3>
               <p className="text-text-muted">
-                Enter the 6-digit verification code sent to your inbox to confirm your eligibility.
+                Connect your wallet and select the account you want to mint to.
               </p>
             </Card>
 
-            {/* Step 3: Mint NFT */}
+            {/* Step 3: Mint & View */}
             <Card glass className="text-center p-8 hover:scale-105 transition-transform">
               <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-parity-indigo to-parity-purple flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-parity-indigo to-parity-cyan flex items-center justify-center">
                   <Sparkles className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold mb-4">3. Mint Your NFT</h3>
+              <h3 className="text-xl font-bold mb-4">3. Mint & View NFT</h3>
               <p className="text-text-muted">
-                Connect your wallet and mint your unique 3D glass logo NFT with a randomly assigned rarity tier.
+                Mint your unique NFT and view it on Subscan, Nova Wallet, or Kodadot.
               </p>
             </Card>
           </div>

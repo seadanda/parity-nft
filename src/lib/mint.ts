@@ -275,9 +275,8 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
       item: nextId
     });
 
-    // Batch all three calls together
-    // Try batch_all with decoded calls in an object with 'calls' property
-    const batchCall = api.tx.Utility.batch_all({
+    // Batch mint operations together
+    const mintBatch = api.tx.Utility.batch_all({
       calls: [
         mintCall.decodedCall,
         setMetadataCall.decodedCall,
@@ -285,11 +284,60 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
       ]
     });
 
-    // Wrap batch in proxy call - asset manager can force_mint
-    const proxyCall = api.tx.Proxy.proxy({
+    // Wrap mint batch in proxy call - asset manager can force_mint
+    const mintProxyCall = api.tx.Proxy.proxy({
       real: { type: "Id", value: collectionOwnerAddress },
       force_proxy_type: { type: "AssetManager", value: undefined },
-      call: batchCall.decodedCall
+      call: mintBatch.decodedCall
+    });
+
+    // Create set_attribute calls for hash, tier, and rarity
+    const setHashAttribute = api.tx.Nfts.set_attribute({
+      collection: COLLECTION_ID,
+      maybe_item: nextId,
+      namespace: { type: "CollectionOwner", value: undefined },
+      key: Binary.fromText("hash"),
+      value: Binary.fromText(hash)
+    });
+
+    const setTierAttribute = api.tx.Nfts.set_attribute({
+      collection: COLLECTION_ID,
+      maybe_item: nextId,
+      namespace: { type: "CollectionOwner", value: undefined },
+      key: Binary.fromText("tier"),
+      value: Binary.fromText(tierInfo.name)
+    });
+
+    const setRarityAttribute = api.tx.Nfts.set_attribute({
+      collection: COLLECTION_ID,
+      maybe_item: nextId,
+      namespace: { type: "CollectionOwner", value: undefined },
+      key: Binary.fromText("rarity"),
+      value: Binary.fromText(tierInfo.rarity)
+    });
+
+    // Batch attribute setting calls together
+    const attributeBatch = api.tx.Utility.batch_all({
+      calls: [
+        setHashAttribute.decodedCall,
+        setTierAttribute.decodedCall,
+        setRarityAttribute.decodedCall
+      ]
+    });
+
+    // Wrap attribute batch in proxy call - asset owner can set attributes
+    const attributeProxyCall = api.tx.Proxy.proxy({
+      real: { type: "Id", value: collectionOwnerAddress },
+      force_proxy_type: { type: "AssetOwner", value: undefined },
+      call: attributeBatch.decodedCall
+    });
+
+    // Wrap both proxy calls in a final batch_all
+    const finalBatch = api.tx.Utility.batch_all({
+      calls: [
+        mintProxyCall.decodedCall,
+        attributeProxyCall.decodedCall
+      ]
     });
 
     // Execute transaction with asset manager signer
@@ -297,8 +345,8 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
 
     const result = await new Promise<MintResult>((resolve, reject) => {
       try {
-        const subscription = proxyCall.signSubmitAndWatch(assetManagerSigner).subscribe({
-          next: (event) => {
+        const subscription = finalBatch.signSubmitAndWatch(assetManagerSigner).subscribe({
+          next: (event: any) => {
           // Wait for finalization
           if (event.type === 'finalized') {
             const blockHash = event.block.hash;
@@ -307,7 +355,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
             console.log('[mint] Transaction finalized in block:', blockHash);
 
             // Check for errors - System.ExtrinsicFailed event
-            const failed = blockEvents.find((e) =>
+            const failed = blockEvents.find((e: any) =>
               e.type === 'System' && e.value.type === 'ExtrinsicFailed'
             );
 
@@ -319,11 +367,11 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
             }
 
             // Check for success events
-            const issuedEvent = blockEvents.find((e) =>
+            const issuedEvent = blockEvents.find((e: any) =>
               e.type === 'Nfts' && e.value.type === 'Issued'
             );
 
-            const proxyExecutedEvent = blockEvents.find((e) =>
+            const proxyExecutedEvent = blockEvents.find((e: any) =>
               e.type === 'Proxy' && e.value.type === 'ProxyExecuted'
             );
 
@@ -349,12 +397,12 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
             }
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           console.error('[mint] Transaction error:', err);
           reject(err);
         }
       });
-      } catch (err) {
+      } catch (err: any) {
         console.error('[mint] Failed to create subscription:', err);
         reject(err);
       }

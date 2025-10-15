@@ -335,7 +335,15 @@ export default function MintForm() {
           <div>
             <h2 className="text-2xl font-bold mb-2">Enter Verification Code</h2>
             <p className="text-text-muted">
-              We sent a 6-digit code to <strong>{email}</strong>
+              We sent a 6-digit code to <strong>{email}</strong>{' '}
+              <button
+                type="button"
+                onClick={() => setStep('email')}
+                className="text-parity-pink hover:text-parity-pink/80 underline text-sm"
+                disabled={isSubmitting}
+              >
+                (change email)
+              </button>
             </p>
           </div>
 
@@ -358,26 +366,15 @@ export default function MintForm() {
               </div>
             )}
 
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setStep('email')}
-                disabled={isSubmitting}
-                className="flex-1"
-              >
-                Change Email
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                loading={isSubmitting}
-                disabled={isSubmitting || code.length !== 6}
-                className="flex-1"
-              >
-                Verify
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isSubmitting}
+              disabled={isSubmitting || code.length !== 6}
+              className="w-full"
+            >
+              Verify
+            </Button>
           </form>
         </div>
       </Card>

@@ -21,6 +21,7 @@ export default function WalletConnect() {
   } = useWallet();
 
   const [showAccountSelector, setShowAccountSelector] = useState(false);
+  const [showAccountPickerModal, setShowAccountPickerModal] = useState(false);
   const [identities, setIdentities] = useState<Record<string, IdentityData>>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +40,13 @@ export default function WalletConnect() {
       };
     }
   }, [showAccountSelector]);
+
+  // Show account picker modal when connected but no account selected
+  useEffect(() => {
+    if (isConnected && accounts.length > 0 && !selectedAccount) {
+      setShowAccountPickerModal(true);
+    }
+  }, [isConnected, accounts, selectedAccount]);
 
   // Fetch identities for all connected accounts
   useEffect(() => {
@@ -110,6 +118,66 @@ export default function WalletConnect() {
     };
   };
 
+  // Account picker modal - shown when connected but no account selected
+  if (showAccountPickerModal && isConnected && accounts.length > 0 && !selectedAccount) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+        <div className="bg-black/90 border-2 border-parity-pink/50 rounded-xl shadow-2xl w-full max-w-md my-auto backdrop-blur-xl">
+          <div className="p-6 border-b border-gray-700">
+            <h2 className="text-xl font-bold text-white mb-2">Select Account</h2>
+            <p className="text-sm text-gray-400">
+              Choose which account you want to use for minting
+            </p>
+          </div>
+
+          <div className="p-4 max-h-96 overflow-y-auto">
+            {accounts.map((account) => {
+              const identity = identities[account.address];
+              const identityOrAnon = identity?.display || 'anon';
+
+              return (
+                <button
+                  key={account.address}
+                  onClick={() => {
+                    selectAccount(account.address);
+                    setShowAccountPickerModal(false);
+                  }}
+                  className="w-full text-left px-4 py-2 rounded-lg transition-colors hover:bg-gray-800 text-gray-300 mb-1 border border-gray-700 hover:border-parity-pink"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      {account.name && (
+                        <p className="text-sm font-medium text-white mb-1">
+                          {account.name} ({identityOrAnon})
+                        </p>
+                      )}
+                      {!account.name && (
+                        <p className="text-sm font-medium text-white mb-1">{identityOrAnon}</p>
+                      )}
+                      <p className="text-xs font-mono text-gray-400 break-all">{account.address}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="p-4 border-t border-gray-700">
+            <button
+              onClick={() => {
+                disconnectWallet();
+                setShowAccountPickerModal(false);
+              }}
+              className="w-full px-4 py-2 text-sm text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+            >
+              Cancel & Disconnect
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isConnected && selectedAccount) {
     return (
       <div className="relative" ref={dropdownRef}>
@@ -124,7 +192,7 @@ export default function WalletConnect() {
         </button>
 
         {showAccountSelector && (
-          <div className="absolute right-0 mt-2 w-80 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50">
+          <div className="absolute right-0 mt-2 w-80 bg-black/90 border-2 border-parity-pink/50 rounded-lg shadow-xl z-50 backdrop-blur-xl">
             <div className="p-4 border-b border-gray-700">
               <p className="text-sm text-gray-400">Connected with {selectedAccount.source}</p>
             </div>
@@ -141,10 +209,10 @@ export default function WalletConnect() {
                         selectAccount(account.address);
                         setShowAccountSelector(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors mb-1 ${
                         account.address === selectedAccount.address
-                          ? 'bg-pink-500/20 text-pink-300'
-                          : 'hover:bg-gray-800 text-gray-300'
+                          ? 'bg-pink-500/20 text-pink-300 border border-parity-pink'
+                          : 'hover:bg-gray-800 text-gray-300 border border-gray-700 hover:border-parity-pink'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -195,14 +263,12 @@ export default function WalletConnect() {
 
       {!isConnecting && availableExtensions.length === 0 && (
         <p className="mt-2 text-xs text-gray-500">
-          No wallet detected. Install{' '}
+          No wallet detected.{' '}
           <a
-            href="https://polkadot.js.org/extension/"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/how-it-works#wallet-installation"
             className="text-pink-400 hover:underline"
           >
-            Polkadot.js
+            Learn how to install a wallet
           </a>
         </p>
       )}

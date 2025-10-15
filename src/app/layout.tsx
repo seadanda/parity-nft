@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { WalletProvider } from "@/contexts/WalletContext";
 
@@ -38,13 +39,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${unbounded.variable} antialiased`}>
+      <body className={`${unbounded.variable} antialiased flex flex-col min-h-screen`}>
         <WalletProvider>
           <ErrorBoundary>
             <Header />
-            <main id="main-content">
+            <main id="main-content" className="flex-1">
               {children}
             </main>
+            <Footer />
           </ErrorBoundary>
         </WalletProvider>
         <Analytics />

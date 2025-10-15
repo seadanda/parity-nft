@@ -1974,7 +1974,7 @@ api.tx.nfts.setMetadata(
                 <div>
                   <h3 className="text-lg font-bold mb-2">Which wallets are supported?</h3>
                   <p className="text-text-muted text-sm">
-                    Any Polkadot-compatible wallet that supports Asset Hub (Parachain 1000), including Polkadot.js extension, Talisman, SubWallet, Nova Wallet, and more.
+                    Any Polkadot-compatible wallet that supports Asset Hub, including Talisman, Nova Wallet, SubWallet and more.
                   </p>
                 </div>
 

@@ -95,11 +95,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       }));
 
       setAccounts(formattedAccounts);
-      setSelectedAccount(formattedAccounts[0]);
+      // Don't auto-select account - let user choose
+      setSelectedAccount(null);
       setSelectedExtension(targetExtension);
       setIsConnected(true);
 
-      console.log('[Wallet] Connected successfully');
+      console.log('[Wallet] Connected successfully, awaiting account selection');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to connect wallet';
       console.error('[Wallet] Connection error:', err);
