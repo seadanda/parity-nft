@@ -1,19 +1,30 @@
-// Email service with Resend (production) and Ethereal (local testing)
-import { Resend } from 'resend';
+// Email service with ProtonMail SMTP (production) and Ethereal (local testing)
 import nodemailer from 'nodemailer';
 
-// USE_RESEND env variable controls whether to use Resend or Ethereal/console
-// - "true" → use Resend (requires RESEND_API_KEY)
+// USE_PROTON_SMTP env variable controls whether to use ProtonMail SMTP or Ethereal/console
+// - "true" → use ProtonMail SMTP (requires PROTON_SMTP_USER and PROTON_SMTP_TOKEN)
 // - "false" or unset → use Ethereal/console (development mode)
-const USE_RESEND = process.env.USE_RESEND === 'true';
+const USE_PROTON_SMTP = process.env.USE_PROTON_SMTP === 'true';
 
-// Resend client (production) - only instantiate if API key is provided
-const resend = USE_RESEND && process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-
-// Log email configuration on startup
-console.log(`[email] Email mode: ${USE_RESEND ? 'Resend (production)' : 'Ethereal/Console (development)'}`);
-if (USE_RESEND && !resend) {
-  console.warn('[email] ⚠️  WARNING: USE_RESEND is true but RESEND_API_KEY is not set!');
+// ProtonMail SMTP transporter (production)
+let protonTransporter: any = null;
+if (USE_PROTON_SMTP) {
+  if (process.env.PROTON_SMTP_USER && process.env.PROTON_SMTP_TOKEN) {
+    protonTransporter = nodemailer.createTransport({
+      host: process.env.PROTON_SMTP_HOST || 'smtp.protonmail.ch',
+      port: parseInt(process.env.PROTON_SMTP_PORT || '587'),
+      secure: false, // Use STARTTLS
+      auth: {
+        user: process.env.PROTON_SMTP_USER,
+        pass: process.env.PROTON_SMTP_TOKEN
+      }
+    });
+    console.log(`[email] Email mode: ProtonMail SMTP (${process.env.PROTON_SMTP_USER})`);
+  } else {
+    console.warn('[email] ⚠️  WARNING: USE_PROTON_SMTP is true but PROTON_SMTP_USER or PROTON_SMTP_TOKEN is not set!');
+  }
+} else {
+  console.log('[email] Email mode: Ethereal/Console (development)');
 }
 
 // Ethereal account cache for local testing
@@ -145,25 +156,25 @@ If you didn't request this code, you can safely ignore this email.
 Parity Technologies
   `;
 
-  if (USE_RESEND && resend) {
-    // Production: Use Resend
-    console.log(`[email] Sending verification code via Resend to ${email}`);
-    const result = await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'nft@parity.io',
+  if (USE_PROTON_SMTP && protonTransporter) {
+    // Production: Use ProtonMail SMTP
+    console.log(`[email] Sending verification code via ProtonMail SMTP to ${email}`);
+    const info = await protonTransporter.sendMail({
+      from: `"10 Years of Parity NFT" <${process.env.FROM_EMAIL || 'hello@seadanda.dev'}>`,
       to: email,
       subject,
-      html: htmlContent,
-      text: textContent
+      text: textContent,
+      html: htmlContent
     });
 
-    console.log('Email sent via Resend:', result);
-    return result;
-  } else if (USE_RESEND && !resend) {
-    // Production mode but no Resend API key configured - ERROR!
-    console.error('❌ ERROR: USE_RESEND is true but RESEND_API_KEY is not set!');
+    console.log('Email sent via ProtonMail SMTP:', info.messageId);
+    return { messageId: info.messageId, accepted: info.accepted };
+  } else if (USE_PROTON_SMTP && !protonTransporter) {
+    // Production mode but ProtonMail SMTP not configured - ERROR!
+    console.error('❌ ERROR: USE_PROTON_SMTP is true but PROTON_SMTP_USER or PROTON_SMTP_TOKEN is not set!');
     console.error('Email would NOT be sent to:', email);
     console.error('Code that would be sent:', code);
-    throw new Error('Email service not configured. Set RESEND_API_KEY in environment variables.');
+    throw new Error('Email service not configured. Set PROTON_SMTP_USER and PROTON_SMTP_TOKEN in environment variables.');
   } else {
     // Development: Use Ethereal or console fallback
     const transporter = await getEtherealTransporter();
@@ -280,22 +291,22 @@ Thanks for being part of Parity's 10-year journey!
 Parity Technologies
   `;
 
-  if (USE_RESEND && resend) {
-    console.log(`[email] Sending already-minted email via Resend to ${email}`);
-    const result = await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'nft@parity.io',
+  if (USE_PROTON_SMTP && protonTransporter) {
+    console.log(`[email] Sending already-minted email via ProtonMail SMTP to ${email}`);
+    const info = await protonTransporter.sendMail({
+      from: `"10 Years of Parity NFT" <${process.env.FROM_EMAIL || 'hello@seadanda.dev'}>`,
       to: email,
       subject,
-      html: htmlContent,
-      text: textContent
+      text: textContent,
+      html: htmlContent
     });
 
-    console.log('Already minted email sent via Resend:', result);
-    return result;
-  } else if (USE_RESEND && !resend) {
-    console.error('❌ ERROR: USE_RESEND is true but RESEND_API_KEY is not set!');
+    console.log('Already minted email sent via ProtonMail SMTP:', info.messageId);
+    return { messageId: info.messageId, accepted: info.accepted };
+  } else if (USE_PROTON_SMTP && !protonTransporter) {
+    console.error('❌ ERROR: USE_PROTON_SMTP is true but PROTON_SMTP_USER or PROTON_SMTP_TOKEN is not set!');
     console.error('Already-minted email would NOT be sent to:', email);
-    throw new Error('Email service not configured. Set RESEND_API_KEY in environment variables.');
+    throw new Error('Email service not configured. Set PROTON_SMTP_USER and PROTON_SMTP_TOKEN in environment variables.');
   } else {
     const transporter = await getEtherealTransporter();
 
@@ -450,22 +461,22 @@ This NFT is soulbound to your wallet and represents your connection to Parity's 
 Parity Technologies
   `;
 
-  if (USE_RESEND && resend) {
-    console.log(`[email] Sending mint success email via Resend to ${email}`);
-    const result = await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'nft@parity.io',
+  if (USE_PROTON_SMTP && protonTransporter) {
+    console.log(`[email] Sending mint success email via ProtonMail SMTP to ${email}`);
+    const info = await protonTransporter.sendMail({
+      from: `"10 Years of Parity NFT" <${process.env.FROM_EMAIL || 'hello@seadanda.dev'}>`,
       to: email,
       subject,
-      html: htmlContent,
-      text: textContent
+      text: textContent,
+      html: htmlContent
     });
 
-    console.log('Mint success email sent via Resend:', result);
-    return result;
-  } else if (USE_RESEND && !resend) {
-    console.error('❌ ERROR: USE_RESEND is true but RESEND_API_KEY is not set!');
+    console.log('Mint success email sent via ProtonMail SMTP:', info.messageId);
+    return { messageId: info.messageId, accepted: info.accepted };
+  } else if (USE_PROTON_SMTP && !protonTransporter) {
+    console.error('❌ ERROR: USE_PROTON_SMTP is true but PROTON_SMTP_USER or PROTON_SMTP_TOKEN is not set!');
     console.error('Mint success email would NOT be sent to:', email);
-    throw new Error('Email service not configured. Set RESEND_API_KEY in environment variables.');
+    throw new Error('Email service not configured. Set PROTON_SMTP_USER and PROTON_SMTP_TOKEN in environment variables.');
   } else {
     const transporter = await getEtherealTransporter();
 

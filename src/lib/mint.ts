@@ -295,7 +295,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
     const setHashAttribute = api.tx.Nfts.set_attribute({
       collection: COLLECTION_ID,
       maybe_item: nextId,
-      namespace: { type: "CollectionOwner", value: undefined },
+      namespace: { type: "ItemOwner", value: undefined },
       key: Binary.fromText("hash"),
       value: Binary.fromText(hash)
     });
@@ -303,7 +303,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
     const setTierAttribute = api.tx.Nfts.set_attribute({
       collection: COLLECTION_ID,
       maybe_item: nextId,
-      namespace: { type: "CollectionOwner", value: undefined },
+      namespace: { type: "ItemOwner", value: undefined },
       key: Binary.fromText("tier"),
       value: Binary.fromText(tierInfo.name)
     });
@@ -311,7 +311,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
     const setRarityAttribute = api.tx.Nfts.set_attribute({
       collection: COLLECTION_ID,
       maybe_item: nextId,
-      namespace: { type: "CollectionOwner", value: undefined },
+      namespace: { type: "ItemOwner", value: undefined },
       key: Binary.fromText("rarity"),
       value: Binary.fromText(tierInfo.rarity)
     });
@@ -410,8 +410,10 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
 
     // Record mint in database after transaction completes
     // Note: Email is NOT stored in mint_records for privacy
+    // but whitelist.has_minted is set to prevent double minting
     try {
       await recordMint(
+        email,
         recipientAddress,
         result.collectionId,
         result.nftId,
@@ -422,6 +424,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
         result.metadataUrl,
         result.imageUrl
       );
+      console.log(`[mint] Mint recorded for ${email}, has_minted flag set`);
     } catch (dbError) {
       console.error('Failed to record mint in database:', dbError);
       // Don't fail the mint if database recording fails

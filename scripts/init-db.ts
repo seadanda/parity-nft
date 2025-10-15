@@ -68,6 +68,7 @@ async function initializeDatabase() {
         name TEXT,
         category TEXT,
         notes TEXT,
+        has_minted INTEGER NOT NULL DEFAULT 0,
         added_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         added_by TEXT
       )

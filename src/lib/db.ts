@@ -43,6 +43,7 @@ async function initializeTables() {
       name TEXT,
       category TEXT,
       notes TEXT,
+      has_minted INTEGER NOT NULL DEFAULT 0,
       added_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       added_by TEXT
     )
@@ -160,14 +161,11 @@ export async function getWhitelistEntry(email: string) {
 
 export async function getAllWhitelist() {
   const db = getDb();
-  // Note: mint_records no longer contains email, so we can't join on it
-  // Instead, we check via sessions table if email has minted
+  // Note: mint_records no longer contains email for privacy
+  // has_minted flag is tracked in whitelist table
   const result = await db.execute(`
-    SELECT w.*,
-           CASE WHEN s.is_active = 0 THEN 1 ELSE 0 END as has_minted
-    FROM whitelist w
-    LEFT JOIN sessions s ON LOWER(w.email) = LOWER(s.email) AND s.is_active = 0
-    ORDER BY w.added_at DESC
+    SELECT * FROM whitelist
+    ORDER BY added_at DESC
   `);
   return result.rows;
 }
@@ -274,20 +272,20 @@ export async function validateSession(token: string): Promise<{ email: string; n
 }
 
 // Mint record queries
-// Note: We check hasEmailMinted via sessions table, not mint_records
+// Note: We check hasEmailMinted via whitelist table
 // mint_records intentionally does NOT store email for privacy
 export async function hasEmailMinted(email: string): Promise<boolean> {
   const db = getDb();
-  // Check if this email has an active session that has minted
-  // We track this through the sessions table, not mint_records
+  // Check if this email has minted via whitelist.has_minted flag
   const result = await db.execute({
-    sql: 'SELECT 1 FROM sessions WHERE LOWER(email) = LOWER(?) AND is_active = 0 LIMIT 1',
+    sql: 'SELECT has_minted FROM whitelist WHERE LOWER(email) = LOWER(?) LIMIT 1',
     args: [email]
   });
-  return result.rows.length > 0;
+  return result.rows.length > 0 && result.rows[0].has_minted === 1;
 }
 
 export async function recordMint(
+  email: string,
   walletAddress: string,
   collectionId: number,
   nftId: number,
@@ -299,7 +297,9 @@ export async function recordMint(
   imageIpfs?: string
 ) {
   const db = getDb();
-  const result = await db.execute({
+
+  // Insert mint record (email is NOT stored for privacy)
+  const mintResult = await db.execute({
     sql: `
       INSERT INTO mint_records (
         wallet_address, collection_id, nft_id, hash, tier, rarity,
@@ -318,7 +318,14 @@ export async function recordMint(
       imageIpfs || null
     ]
   });
-  return result;
+
+  // Mark email as minted in whitelist
+  await db.execute({
+    sql: 'UPDATE whitelist SET has_minted = 1 WHERE LOWER(email) = LOWER(?)',
+    args: [email]
+  });
+
+  return mintResult;
 }
 
 // Rate limiting queries

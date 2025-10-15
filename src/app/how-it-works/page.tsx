@@ -1804,6 +1804,87 @@ api.tx.nfts.setMetadata(
           </Card>
         </section>
 
+        {/* Email Sending & Security */}
+        <section className="mb-16">
+          <Card glass className="p-8">
+            <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+              <Mail className="w-8 h-8 text-parity-cyan" />
+              Email Sending & Security
+            </h2>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold mb-3">ProtonMail SMTP</h3>
+                <p className="text-text-muted mb-4">
+                  Verification codes and NFT success notifications are sent via{' '}
+                  <strong>ProtonMail SMTP</strong>, providing enhanced privacy and security for email communications.
+                </p>
+              </div>
+
+              <div className="bg-parity-pink/10 border border-parity-pink/30 rounded-lg p-6">
+                <h3 className="text-xl font-bold mb-3">Encryption In-Flight</h3>
+                <ul className="space-y-2 text-sm text-text-muted">
+                  <li className="flex items-start gap-2">
+                    <span className="text-parity-cyan mt-1">✓</span>
+                    <span><strong>TLS/STARTTLS encryption</strong> protects emails during transmission from our servers to ProtonMail</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-parity-cyan mt-1">✓</span>
+                    <span><strong>Port 587 with STARTTLS</strong> ensures secure SMTP submission</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-parity-cyan mt-1">✓</span>
+                    <span><strong>Token-based authentication</strong> instead of passwords (tokens can be rotated)</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-parity-indigo/10 border border-parity-indigo/30 rounded-lg p-6">
+                <h3 className="text-xl font-bold mb-3">Encryption At-Rest</h3>
+                <ul className="space-y-2 text-sm text-text-muted">
+                  <li className="flex items-start gap-2">
+                    <span className="text-parity-cyan mt-1">✓</span>
+                    <span><strong>Zero-access encryption</strong> - Once emails reach ProtonMail servers, they are encrypted at rest</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-parity-cyan mt-1">✓</span>
+                    <span><strong>ProtonMail cannot read your emails</strong> - Emails are stored with the same encryption as regular ProtonMail messages</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-parity-cyan mt-1">✓</span>
+                    <span><strong>Swiss privacy laws</strong> - ProtonMail is based in Switzerland with strong data protection regulations</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-background/30 border border-border rounded-lg p-6">
+                <h3 className="text-xl font-bold mb-3">What This Means</h3>
+                <p className="text-text-muted mb-3">
+                  Unlike traditional email services, ProtonMail's zero-access encryption ensures that:
+                </p>
+                <ul className="space-y-2 text-sm text-text-muted ml-6 list-disc">
+                  <li>Your verification codes are encrypted once they reach ProtonMail's servers</li>
+                  <li>ProtonMail staff cannot access the content of sent emails</li>
+                  <li>Emails are protected at rest with industry-leading encryption (AEGIS-256)</li>
+                  <li>No third-party email service has access to your communication data</li>
+                </ul>
+              </div>
+
+              <p className="text-sm text-text-muted italic">
+                Learn more about ProtonMail's security at{' '}
+                <a
+                  href="https://proton.me/security"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-parity-cyan hover:underline"
+                >
+                  proton.me/security
+                </a>
+              </p>
+            </div>
+          </Card>
+        </section>
+
         {/* Technical Details (Collapsible) */}
         <section className="mb-16">
           <Card glass className="p-8">

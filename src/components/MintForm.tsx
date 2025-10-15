@@ -275,6 +275,17 @@ export default function MintForm() {
     reset();
   };
 
+  // Convert address to Polkadot SS58 format (prefix 0) for display
+  const getPolkadotAddress = (address: string): string => {
+    try {
+      const [publicKey] = ss58Decode(address);
+      return ss58Encode(publicKey, 0);
+    } catch (error) {
+      console.error('Failed to convert address to Polkadot format:', error);
+      return address; // Fallback to original
+    }
+  };
+
   // Step 1: Enter Email
   if (step === 'email') {
     return (
@@ -388,16 +399,16 @@ export default function MintForm() {
         <div className="space-y-6">
           {/* Connected Wallet Badge or Warning */}
           {isConnected && selectedAccount ? (
-            <div className="p-4 rounded-xl bg-parity-pink/10 border border-parity-pink/30">
+            <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30">
               <div className="flex items-center gap-3">
-                <Wallet className="w-5 h-5 text-parity-pink flex-shrink-0" />
+                <Wallet className="w-5 h-5 text-green-400 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm text-parity-pink/80 mb-1">Connected Wallet</p>
+                  <p className="text-sm text-green-400/80 mb-1">Connected Wallet</p>
                   {selectedAccount.name && (
                     <p className="font-medium text-sm mb-1">{selectedAccount.name}</p>
                   )}
                   <p className="text-xs font-mono text-text-muted break-all">
-                    {selectedAccount.address}
+                    {getPolkadotAddress(selectedAccount.address)}
                   </p>
                 </div>
               </div>
