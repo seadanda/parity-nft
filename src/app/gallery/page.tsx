@@ -170,9 +170,37 @@ export default function GalleryPage() {
                 Minted NFTs
               </span>
             </h1>
-            <p className="text-gray-400 text-center text-lg max-w-2xl mx-auto">
+            <p className="text-gray-400 text-center text-lg max-w-2xl mx-auto mb-6">
               Gallery of all minted 10 Years of Parity NFTs
             </p>
+
+            {/* Filter Controls */}
+            <div className="flex justify-center gap-3 mt-6">
+              {selectedAccount && !filterAddress && (
+                <button
+                  onClick={handleFilterMyNFTs}
+                  className="flex items-center gap-2 px-4 py-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/30 text-pink-400 rounded-lg transition-colors"
+                >
+                  <Filter className="w-4 h-4" />
+                  Show My NFTs
+                </button>
+              )}
+
+              {filterAddress && (
+                <div className="flex items-center gap-2 px-4 py-2 bg-pink-500/20 border border-pink-500/50 text-pink-400 rounded-lg">
+                  <Filter className="w-4 h-4" />
+                  <span className="text-sm">
+                    Filtering: {selectedAccount?.address === filterAddress ? 'My NFTs' : truncateAddress(filterAddress)}
+                  </span>
+                  <button
+                    onClick={handleClearFilter}
+                    className="ml-2 hover:bg-pink-500/20 p-1 rounded transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -192,9 +220,19 @@ export default function GalleryPage() {
               <div className="text-center text-gray-400 py-12">
                 <p>No NFTs have been minted yet. Will you be the first?</p>
               </div>
+            ) : filteredNfts.length === 0 ? (
+              <div className="text-center text-gray-400 py-12">
+                <p>No NFTs found for this address.</p>
+                <button
+                  onClick={handleClearFilter}
+                  className="mt-4 text-pink-400 hover:text-pink-300 underline"
+                >
+                  Clear filter
+                </button>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {nfts.map((nft) => {
+                {filteredNfts.map((nft) => {
                   const tierInfo = calculateTierFromHash(nft.hash);
 
                   return (
@@ -278,7 +316,16 @@ export default function GalleryPage() {
             {!loading && !error && nfts.length > 0 && (
               <div className="mt-12 text-center">
                 <p className="text-gray-400">
-                  Total Minted: <span className="text-white font-semibold">{nfts.length}</span>
+                  {filterAddress ? (
+                    <>
+                      Showing <span className="text-white font-semibold">{filteredNfts.length}</span> of{' '}
+                      <span className="text-white font-semibold">{nfts.length}</span> total
+                    </>
+                  ) : (
+                    <>
+                      Total Minted: <span className="text-white font-semibold">{nfts.length}</span>
+                    </>
+                  )}
                 </p>
               </div>
             )}
