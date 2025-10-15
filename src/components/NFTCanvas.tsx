@@ -136,7 +136,8 @@ export default function NFTCanvas({
       // Point lights for extra illumination
       POINT_LIGHTS_CONFIG.forEach(config => {
         const light = new THREE.PointLight(config.color, config.intensity, config.distance);
-        light.position.set(...config.position);
+        const [x, y, z] = config.position;
+        light.position.set(x, y, z);
         scene.add(light);
       });
     }
