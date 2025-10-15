@@ -555,6 +555,7 @@ export default function MintForm() {
                     glowColor={successData.glowColor}
                     autoRotate={true}
                     loadHDR={true}
+                    tierName={successData.tier}
                     className="w-full h-full"
                   />
                 </div>

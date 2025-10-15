@@ -37,6 +37,25 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [selectedExtension, setSelectedExtension] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<InjectedAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<InjectedAccount | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedExtension = localStorage.getItem('wallet_extension');
+      const savedAddress = localStorage.getItem('wallet_address');
+
+      if (savedExtension) {
+        setSelectedExtension(savedExtension);
+      }
+
+      // We'll auto-reconnect in the next useEffect after extensions are loaded
+      console.log('[Wallet] Hydrated from localStorage:', { savedExtension, savedAddress });
+    } catch (err) {
+      console.error('[Wallet] Error hydrating from localStorage:', err);
+    }
+    setIsHydrated(true);
+  }, []);
 
   // Check for available wallet extensions on mount
   useEffect(() => {
@@ -47,7 +66,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         setAvailableExtensions(extensions);
 
         // Auto-select if only one extension is available
-        if (extensions.length === 1) {
+        if (extensions.length === 1 && !selectedExtension) {
           setSelectedExtension(extensions[0]);
         }
       } catch (err) {
@@ -56,7 +75,32 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
 
     checkExtensions();
-  }, []);
+  }, [selectedExtension]);
+
+  // Auto-reconnect on mount if we have saved connection info
+  useEffect(() => {
+    if (!isHydrated || !selectedExtension || isConnected) return;
+
+    const savedAddress = localStorage.getItem('wallet_address');
+    if (savedAddress) {
+      console.log('[Wallet] Auto-reconnecting to saved wallet');
+      connectWallet(selectedExtension);
+    }
+  }, [isHydrated, selectedExtension, isConnected]);
+
+  // Auto-select saved account after reconnection
+  useEffect(() => {
+    if (!isConnected || accounts.length === 0 || selectedAccount) return;
+
+    const savedAddress = localStorage.getItem('wallet_address');
+    if (savedAddress) {
+      const account = accounts.find(acc => acc.address === savedAddress);
+      if (account) {
+        setSelectedAccount(account);
+        console.log('[Wallet] Auto-selected saved account:', savedAddress);
+      }
+    }
+  }, [isConnected, accounts, selectedAccount]);
 
   const connectWallet = useCallback(async (extensionName?: string) => {
     setIsConnecting(true);
@@ -100,6 +144,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       setSelectedExtension(targetExtension);
       setIsConnected(true);
 
+      // Save extension to localStorage
+      try {
+        localStorage.setItem('wallet_extension', targetExtension);
+      } catch (err) {
+        console.error('[Wallet] Error saving extension to localStorage:', err);
+      }
+
       console.log('[Wallet] Connected successfully, awaiting account selection');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to connect wallet';
@@ -117,6 +168,15 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setSelectedExtension(null);
     setIsConnected(false);
     setError(null);
+
+    // Clear localStorage
+    try {
+      localStorage.removeItem('wallet_extension');
+      localStorage.removeItem('wallet_address');
+    } catch (err) {
+      console.error('[Wallet] Error clearing localStorage:', err);
+    }
+
     console.log('[Wallet] Disconnected');
   }, []);
 
@@ -124,6 +184,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     const account = accounts.find((acc) => acc.address === address);
     if (account) {
       setSelectedAccount(account);
+
+      // Save address to localStorage
+      try {
+        localStorage.setItem('wallet_address', address);
+      } catch (err) {
+        console.error('[Wallet] Error saving address to localStorage:', err);
+      }
+
       console.log('[Wallet] Selected account:', address);
     }
   }, [accounts]);

@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Copy } from 'lucide-react';
+import { Copy, Filter, X } from 'lucide-react';
 import { calculateTierFromHash } from '@/lib/tier-calculator';
+import { useWallet } from '@/contexts/WalletContext';
+import { ss58Encode, ss58Decode } from '@polkadot-labs/hdkd-helpers';
 
 const TierViewer = dynamic(() => import('@/components/TierViewer'), {
   ssr: false,
@@ -23,9 +25,11 @@ interface NFTData {
 }
 
 export default function GalleryPage() {
+  const { selectedAccount } = useWallet();
   const [nfts, setNfts] = useState<NFTData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filterAddress, setFilterAddress] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -118,6 +122,33 @@ export default function GalleryPage() {
   // Truncate wallet address for display
   const truncateAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-6)}`;
+  };
+
+  // Normalize address to Polkadot format for comparison
+  const normalizeAddress = (address: string): string => {
+    try {
+      const [publicKey] = ss58Decode(address);
+      return ss58Encode(publicKey, 0);
+    } catch {
+      return address;
+    }
+  };
+
+  // Filter NFTs by address (comparing in Polkadot format)
+  const filteredNfts = filterAddress
+    ? nfts.filter(nft => normalizeAddress(nft.wallet_address) === normalizeAddress(filterAddress))
+    : nfts;
+
+  // Filter by connected wallet
+  const handleFilterMyNFTs = () => {
+    if (selectedAccount) {
+      setFilterAddress(selectedAccount.address);
+    }
+  };
+
+  // Clear filter
+  const handleClearFilter = () => {
+    setFilterAddress(null);
   };
 
   return (
