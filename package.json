@@ -17,7 +17,6 @@
     "whitelist:add": "tsx scripts/add-to-whitelist.ts",
     "proxy:balance": "tsx scripts/check-proxy-balance.ts",
     "ipfs:upload-images": "tsx scripts/upload-tier-images.ts",
-    "ipfs:generate-viewer": "tsx scripts/generate-ipfs-viewer.ts",
     "dev:mint-all": "SKIP_IPFS_CHECK=true tsx scripts/dev-mint-all.ts",
     "test:email": "tsx scripts/test-email-flow.ts",
     "test:mint": "tsx scripts/test-mint.ts",

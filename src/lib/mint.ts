@@ -204,7 +204,7 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
     }
 
     // Create metadata
-    const animationUrl = `ipfs://QmcPqw25RfDdqUvSgVC4sxvXsy43dA2sCRSDAyKx1UPTqa/index.html?hash=${hash}`;
+    const animationUrl = `ipfs://bafybeiblebews2qtwocqwlsdgi2gpnqeczyksl327djlf2ytban2kyjmda?hash=${hash}`;
 
     interface NFTMetadata {
       [key: string]: unknown;
