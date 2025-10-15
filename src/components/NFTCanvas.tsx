@@ -7,35 +7,51 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { calculateTierFromHash } from '@/lib/tier-calculator';
+import {
+  DEFAULT_RENDER_CONFIG,
+  EDGE_GLOW_SHADERS,
+  IRIDESCENCE_SHADERS,
+  hashString,
+  generateMintId,
+  CAMERA_CONFIG,
+  STARFIELD_CONFIG,
+  POINT_LIGHTS_CONFIG,
+} from '@/lib/nft-renderer';
 
-interface TierViewerProps {
+interface NFTCanvasProps {
+  // Primary method: Pass hash and tier is calculated automatically
+  hash?: string;
+
+  // Legacy method: Pass colors directly (backwards compat)
   glassColor?: string;
   glowColor?: string;
+  tierName?: string;
+
+  // Common props
   autoRotate?: boolean;
   loadHDR?: boolean; // Whether to load the large HDR file (default: false for performance)
   className?: string;
-  tierName?: string; // Tier name for stamp
 }
 
-// DJB2 hash algorithm (from sketch-nobase64.js)
-function hashString(str: string): number {
-  let hash = 5381;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash) + str.charCodeAt(i);
-  }
-  return hash >>> 0; // Convert to unsigned 32-bit integer
-}
 
-export default function TierViewer({
-  glassColor = '#ffffff',
-  glowColor = '#ffffff',
+export default function NFTCanvas({
+  hash,
+  glassColor: glassColorProp,
+  glowColor: glowColorProp,
+  tierName: tierNameProp,
   autoRotate = true,
   loadHDR = true,
   className = '',
-  tierName
-}: TierViewerProps) {
+}: NFTCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stampCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Calculate tier from hash if provided, otherwise use props
+  const tierInfo = hash ? calculateTierFromHash(hash) : null;
+  const glassColor = tierInfo?.glassColor ?? glassColorProp ?? '#ffffff';
+  const glowColor = tierInfo?.glowColor ?? glowColorProp ?? '#ffffff';
+  const tierName = tierInfo?.name ?? tierNameProp;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -58,46 +74,12 @@ export default function TierViewer({
     let starField: THREE.Points;
     let animationFrameId: number;
 
-    // Configuration parameters
+    // Configuration parameters - merge defaults with component-specific values
     const params = {
-      // Glass material properties
+      ...DEFAULT_RENDER_CONFIG,
       glassColor: glassColor,
-      transparency: 0.24,
-      roughness: 0.236,
-      metalness: 0.0,
-      transmission: 0.95,
-      ior: 1.4,
-
-      // Glow effect
-      glowIntensity: 0.1,
       glowColor: glowColor,
-      bloomStrength: 1.4,
-      bloomRadius: 0.43,
-      bloomThreshold: 0.5,
-      edgeGlowEnabled: true,
-      edgeGlowOpacity: 1.0,
-      edgeGlowScale: 1.03,
-      edgeGlowSyncWithGlass: false,
-      edgeGlowFresnelPower: 4.4,
-      edgeGlowFresnelIntensity: 2.0,
-
-      // Iridescence
-      iridescenceEnabled: true,
-      iridescenceIntensity: 0.7,
-      iridescenceThickness: 600.0,
-
-      // Animation
-      rotationSpeed: 0.5,
       autoRotate: autoRotate,
-
-      // Lighting
-      ambientIntensity: 0.4,
-      directionalIntensity: 1.0,
-
-      // Environment
-      envMapIntensity: 1.0,
-      starCount: 15000,
-      starSize: 2.0,
     };
 
     function init() {
@@ -108,7 +90,7 @@ export default function TierViewer({
       scene = new THREE.Scene();
 
       // Create camera
-      camera = new THREE.PerspectiveCamera(75, containerWidth / containerHeight, 0.1, 1000);
+      camera = new THREE.PerspectiveCamera(CAMERA_CONFIG.fov, containerWidth / containerHeight, CAMERA_CONFIG.near, CAMERA_CONFIG.far);
       camera.position.set(0, 0, 5);
 
       // Renderer with black background for starfield
@@ -152,13 +134,11 @@ export default function TierViewer({
       scene.add(directionalLight);
 
       // Point lights for extra illumination
-      const pointLight1 = new THREE.PointLight(0x4da6ff, 0.5, 100);
-      pointLight1.position.set(10, 10, 10);
-      scene.add(pointLight1);
-
-      const pointLight2 = new THREE.PointLight(0xff4da6, 0.3, 100);
-      pointLight2.position.set(-10, -10, 10);
-      scene.add(pointLight2);
+      POINT_LIGHTS_CONFIG.forEach(config => {
+        const light = new THREE.PointLight(config.color, config.intensity, config.distance);
+        light.position.set(...config.position);
+        scene.add(light);
+      });
     }
 
     function loadHDREnvironment() {
@@ -220,10 +200,10 @@ export default function TierViewer({
       const radius = Math.max(size.x, size.y, size.z) * 0.5 || 1.0;
 
       // Position camera along +Y looking at origin
-      const cameraY = radius * 3.0;
+      const cameraY = radius * CAMERA_CONFIG.distanceMultiplier;
       camera.position.set(0, cameraY, 0);
-      camera.near = Math.max(0.1, radius * 0.01);
-      camera.far = Math.max(5000, radius * 100.0);
+      camera.near = Math.max(CAMERA_CONFIG.near, radius * CAMERA_CONFIG.nearMultiplier);
+      camera.far = Math.max(5000, radius * CAMERA_CONFIG.farMultiplier);
       camera.updateProjectionMatrix();
 
       // Ensure camera looks at origin
@@ -270,30 +250,8 @@ export default function TierViewer({
           uFresnelPower: { value: params.edgeGlowFresnelPower },
           uFresnelIntensity: { value: params.edgeGlowFresnelIntensity }
         },
-        vertexShader: `
-          varying vec3 vNormal;
-          varying vec3 vViewDir;
-          void main() {
-            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-            vNormal = normalize(normalMatrix * normal);
-            vViewDir = normalize(-mvPosition.xyz);
-            gl_Position = projectionMatrix * mvPosition;
-          }
-        `,
-        fragmentShader: `
-          uniform vec3 uColor;
-          uniform float uOpacity;
-          uniform float uFresnelPower;
-          uniform float uFresnelIntensity;
-          varying vec3 vNormal;
-          varying vec3 vViewDir;
-          void main() {
-            float ndotv = clamp(dot(normalize(vNormal), normalize(vViewDir)), 0.0, 1.0);
-            float fresnel = pow(1.0 - ndotv, uFresnelPower) * uFresnelIntensity;
-            vec3 col = uColor * fresnel;
-            gl_FragColor = vec4(col, fresnel * uOpacity);
-          }
-        `,
+        vertexShader: EDGE_GLOW_SHADERS.vertex,
+        fragmentShader: EDGE_GLOW_SHADERS.fragment,
         transparent: true,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
@@ -332,36 +290,8 @@ export default function TierViewer({
           uThickness: { value: params.iridescenceThickness },
           uIntensity: { value: params.iridescenceIntensity },
         },
-        vertexShader: `
-          varying vec3 vNormal;
-          varying vec3 vViewDir;
-          void main(){
-            vec4 mv = modelViewMatrix * vec4(position,1.0);
-            vNormal = normalize(normalMatrix * normal);
-            vViewDir = normalize(-mv.xyz);
-            gl_Position = projectionMatrix * mv;
-          }
-        `,
-        fragmentShader: `
-          varying vec3 vNormal;
-          varying vec3 vViewDir;
-          uniform float uThickness;
-          uniform float uIntensity;
-          // Simple rainbow palette
-          vec3 hsv2rgb(vec3 c){
-            vec3 rgb = clamp( abs(mod(c.x*6.0+vec3(0.,4.,2.),6.)-3.)-1., 0., 1. );
-            rgb = rgb*rgb*(3.0-2.0*rgb);
-            return c.z * mix( vec3(1.0), rgb, c.y );
-          }
-          void main(){
-            float ndotv = clamp(dot(normalize(vNormal), normalize(vViewDir)), 0.0, 1.0);
-            float fres = pow(1.0 - ndotv, 2.0);
-            float hue = fract(uThickness * 0.001 + fres * 0.8);
-            vec3 color = hsv2rgb(vec3(hue, 0.9, 1.0));
-            float alpha = fres * uIntensity;
-            gl_FragColor = vec4(color * alpha, alpha);
-          }
-        `,
+        vertexShader: IRIDESCENCE_SHADERS.vertex,
+        fragmentShader: IRIDESCENCE_SHADERS.fragment,
         blending: THREE.AdditiveBlending,
         transparent: true,
         depthWrite: false,
@@ -408,16 +338,14 @@ export default function TierViewer({
     }
 
     function createStarfield() {
-      // Create a sparse outer star shell between radius 300-1000
+      // Create a sparse outer star shell
       const starVertices = [];
-      const minRadius = 300;
-      const maxRadius = 1000;
 
-      for (let i = 0; i < (params.starCount || 5000); i++) {
+      for (let i = 0; i < params.starCount; i++) {
           // Generate random point on sphere surface, then scale to random radius
           const theta = Math.random() * Math.PI * 2;
           const phi = Math.acos(2 * Math.random() - 1);
-          const radius = minRadius + Math.random() * (maxRadius - minRadius);
+          const radius = STARFIELD_CONFIG.minRadius + Math.random() * (STARFIELD_CONFIG.maxRadius - STARFIELD_CONFIG.minRadius);
 
           const x = radius * Math.sin(phi) * Math.cos(theta);
           const y = radius * Math.sin(phi) * Math.sin(theta);
@@ -430,10 +358,10 @@ export default function TierViewer({
       starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
 
       const starMaterial = new THREE.PointsMaterial({
-          color: 0x555555,
-          size: params.starSize || 0.9,
+          color: STARFIELD_CONFIG.color,
+          size: params.starSize,
           transparent: true,
-          opacity: 0.8,
+          opacity: STARFIELD_CONFIG.opacity,
           depthWrite: false
       });
 
@@ -506,16 +434,8 @@ export default function TierViewer({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Compute mint ID from hash (like sketch-nobase64.js)
-    const computeMintId = () => {
-      // Use tier + colors + date seed (day resolution)
-      const d = new Date();
-      const seed = `${tierName}|${glassColor}|${glowColor}|${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-      const h = hashString(seed);
-      return h.toString(16).padStart(8, '0').toUpperCase();
-    };
-
-    const mintId = computeMintId();
+    // Only compute mint ID if there's a hash (actual minted NFT)
+    const mintId = hash ? generateMintId(tierName, glassColor, glowColor) : null;
 
     const drawStamp = () => {
       const dpr = window.devicePixelRatio || 1;
@@ -535,7 +455,7 @@ export default function TierViewer({
       const scale = Math.min(width, height) / 600;
       const pad = 14 * scale;
       const line1 = `Tier: ${tierName}`;
-      const line2 = `Mint: ${mintId}`;
+      const line2 = mintId ? `Mint: ${mintId}` : null;
       const line3 = `Parity • 10 Years`;
       const x = width - pad;
       const y = height - pad;
@@ -558,10 +478,12 @@ export default function TierViewer({
       ctx.fillStyle = 'rgba(255,255,255,0.70)';
       ctx.fillText(line1, x, y - 40 * scale);
 
-      // Mint id - scaled
-      ctx.font = `${12 * scale}px Arial`;
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      ctx.fillText(line2, x, y - 60 * scale);
+      // Mint id - only show if hash exists (actual minted NFT)
+      if (line2) {
+        ctx.font = `${12 * scale}px Arial`;
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.fillText(line2, x, y - 60 * scale);
+      }
 
       // Reset shadow
       ctx.shadowBlur = 0;
@@ -575,7 +497,7 @@ export default function TierViewer({
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [tierName, glassColor, glowColor]);
+  }, [hash, tierName, glassColor, glowColor]);
 
   return (
     <div

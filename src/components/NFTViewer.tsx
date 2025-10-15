@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Share2, Copy, ExternalLink, Check } from 'lucide-react';
 import TierBadge from '@/components/TierBadge';
-import TierViewer from '@/components/TierViewer';
+import NFTCanvas from '@/components/NFTCanvas';
 import { Button, Card } from '@/components/ui';
 import { getSubscanLink, formatHash, truncateAddress } from '@/lib/utils';
 
@@ -90,8 +90,8 @@ export default function NFTViewer({ hash, metadata }: NFTViewerProps) {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
       {/* 3D Viewer - Takes up 2 columns on desktop */}
       <div className="lg:col-span-2">
-        <div className="overflow-hidden aspect-video">
-          <TierViewer
+        <div className="overflow-hidden aspect-square">
+          <NFTCanvas
             glassColor={metadata.glassColor}
             glowColor={metadata.glowColor}
             autoRotate={true}

@@ -7,7 +7,7 @@ import { calculateTierFromHash } from '@/lib/tier-calculator';
 import { useWallet } from '@/contexts/WalletContext';
 import { ss58Encode, ss58Decode } from '@polkadot-labs/hdkd-helpers';
 
-const TierViewer = dynamic(() => import('@/components/TierViewer'), {
+const NFTCanvas = dynamic(() => import('@/components/NFTCanvas'), {
   ssr: false,
 });
 
@@ -233,8 +233,6 @@ export default function GalleryPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredNfts.map((nft) => {
-                  const tierInfo = calculateTierFromHash(nft.hash);
-
                   return (
                     <div
                       key={nft.id}
@@ -242,12 +240,10 @@ export default function GalleryPage() {
                     >
                       {/* NFT Viewer */}
                       <div className="aspect-square">
-                        <TierViewer
-                          glassColor={tierInfo.glassColor}
-                          glowColor={tierInfo.glowColor}
+                        <NFTCanvas
+                          hash={nft.hash}
                           autoRotate={true}
                           loadHDR={true}
-                          tierName={nft.tier}
                           className="w-full h-full"
                         />
                       </div>

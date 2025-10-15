@@ -10,7 +10,7 @@ import { Button, Input, Modal, Card } from '@/components/ui';
 import { mintFormSchema, type MintFormData } from '@/lib/validation';
 import { type MintResponse } from '@/lib/api';
 import { getSubscanLink, formatHash } from '@/lib/utils';
-import TierViewer from './TierViewer';
+import NFTCanvas from './NFTCanvas';
 import { Check, Loader2, Circle, ExternalLink } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
 import { ss58Encode, ss58Decode } from '@polkadot-labs/hdkd-helpers';
@@ -550,7 +550,7 @@ export default function MintForm() {
               {/* NFT Preview */}
               {successData.glassColor && successData.glowColor && (
                 <div className="relative w-full h-64 rounded-xl overflow-hidden border border-white/10 bg-black/20">
-                  <TierViewer
+                  <NFTCanvas
                     glassColor={successData.glassColor}
                     glowColor={successData.glowColor}
                     autoRotate={true}

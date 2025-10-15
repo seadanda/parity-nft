@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useMemo } from 'react';
-import TierViewer from '@/components/TierViewer';
+import NFTCanvas from '@/components/NFTCanvas';
 import { TIERS } from '@/lib/tiers';
 
 /**
@@ -79,7 +79,7 @@ export default function HashViewerPage() {
 
   return (
     <div className="w-screen h-screen bg-[#0a0a0f]">
-      <TierViewer
+      <NFTCanvas
         glassColor={tier.glassColor}
         glowColor={tier.glowColor}
         autoRotate={false}

@@ -26,7 +26,7 @@ export default function TierBadge({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-3 rounded-2xl glass border',
+        'inline-flex items-center rounded-2xl glass border',
         sizes[size],
         className
       )}
@@ -35,20 +35,6 @@ export default function TierBadge({
         boxShadow: `0 0 20px ${glowColor}20`,
       }}
     >
-      {/* Color swatches */}
-      <div className="flex gap-1.5">
-        <div
-          className="w-4 h-4 rounded-full border border-white/20"
-          style={{ backgroundColor: glassColor }}
-          title={`Glass: ${glassColor}`}
-        />
-        <div
-          className="w-4 h-4 rounded-full border border-white/20"
-          style={{ backgroundColor: glowColor }}
-          title={`Glow: ${glowColor}`}
-        />
-      </div>
-
       {/* Tier info */}
       <div className="flex flex-col">
         <span className="font-bold" style={{ color: glowColor }}>

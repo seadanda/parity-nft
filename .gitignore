@@ -48,3 +48,6 @@ data/*.db*
 .env*.local
 
 /package-lock.json
+
+# Generated IPFS viewers
+/ipfs-viewers/

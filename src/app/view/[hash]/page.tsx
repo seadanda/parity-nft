@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { calculateTierFromHash } from '@/lib/tier-calculator';
 
-const TierViewer = dynamic(() => import('@/components/TierViewer'), {
+const NFTCanvas = dynamic(() => import('@/components/NFTCanvas'), {
   ssr: false,
 });
 
@@ -35,7 +35,6 @@ export default function ViewNFTPage() {
 
   // Calculate tier from hash (deterministic - no database needed)
   const tierInfo = calculateTierFromHash(hash);
-  const COLLECTION_ID = parseInt(process.env.NEXT_PUBLIC_COLLECTION_ID || '669');
 
   return (
     <div className="relative min-h-screen bg-[#0a0a0f]">
@@ -45,12 +44,10 @@ export default function ViewNFTPage() {
           {/* Main Viewer */}
           <div className="overflow-hidden mb-8">
             <div className="aspect-square max-w-3xl mx-auto">
-              <TierViewer
-                glassColor={tierInfo.glassColor}
-                glowColor={tierInfo.glowColor}
+              <NFTCanvas
+                hash={hash}
                 autoRotate={true}
                 loadHDR={true}
-                tierName={tierInfo.name}
                 className="w-full h-full"
               />
             </div>

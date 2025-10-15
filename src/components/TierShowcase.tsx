@@ -2,16 +2,18 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { Maximize2, ArrowLeft } from 'lucide-react';
 import { TIERS } from '@/lib/tiers';
 import { Card } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
-const TierViewer = dynamic(() => import('@/components/TierViewer'), {
+const NFTCanvas = dynamic(() => import('@/components/NFTCanvas'), {
   ssr: false,
 });
 
 export default function TierShowcase() {
   const [activeTab, setActiveTab] = useState(0);
+  const [fullscreenTier, setFullscreenTier] = useState<typeof TIERS[0] | null>(null);
 
   // Group tiers by rarity category
   const rarityGroups = [
@@ -24,6 +26,77 @@ export default function TierShowcase() {
   ];
 
   const activeTiers = rarityGroups[activeTab].tiers;
+
+  // If fullscreen tier is active, show fullscreen view (same as /view/[hash] page)
+  if (fullscreenTier) {
+    return (
+      <div className="relative min-h-screen bg-[#0a0a0f]">
+        {/* Content */}
+        <div className="relative z-10 pt-24 pb-12 px-6">
+          <div className="max-w-6xl mx-auto">
+            {/* Main Viewer */}
+            <div className="overflow-hidden mb-8">
+              <div className="aspect-square max-w-3xl mx-auto">
+                <NFTCanvas
+                  glassColor={fullscreenTier.glassColor}
+                  glowColor={fullscreenTier.glowColor}
+                  tierName={fullscreenTier.name}
+                  autoRotate={true}
+                  loadHDR={true}
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+
+            {/* Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+              {/* Tier Info */}
+              <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg p-6">
+                <h3 className="text-sm text-gray-500 uppercase tracking-wider mb-4">
+                  Tier Details
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Tier</p>
+                    <p className="text-lg font-semibold text-white">{fullscreenTier.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Rarity</p>
+                    <p className="text-lg font-semibold text-white">{fullscreenTier.rarity}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hash Info */}
+              <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg p-6">
+                <h3 className="text-sm text-gray-500 uppercase tracking-wider mb-4">
+                  Preview
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-400 italic">
+                      This is a tier preview. Mint an NFT to get a unique hash that will deterministically generate this tier's colors and appearance.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-4 justify-center mt-8">
+              <button
+                onClick={() => setFullscreenTier(null)}
+                className="px-6 py-3 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Back to Tiers
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -51,12 +124,23 @@ export default function TierShowcase() {
         {activeTiers.map((tier) => (
           <Card key={tier.name} glass className="p-0 overflow-hidden">
             {/* 3D NFT Viewer */}
-            <div className="aspect-video bg-black/50 relative">
-              <TierViewer
+            <div className="aspect-square bg-black/50 relative group">
+              <NFTCanvas
                 glassColor={tier.glassColor}
                 glowColor={tier.glowColor}
+                tierName={tier.name}
                 autoRotate={true}
+                loadHDR={false}
               />
+
+              {/* Fullscreen Button */}
+              <button
+                onClick={() => setFullscreenTier(tier)}
+                className="absolute top-3 right-3 p-2 bg-black/70 hover:bg-black/90 rounded-lg border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                title="View Fullscreen"
+              >
+                <Maximize2 className="w-5 h-5 text-white" />
+              </button>
             </div>
 
             {/* Tier Info */}
