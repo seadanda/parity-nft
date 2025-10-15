@@ -527,9 +527,8 @@ export default function MintForm() {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-yellow-100 mb-2">Privacy Notice</p>
                   <p className="text-xs text-yellow-200/80 leading-relaxed">
-                    Minting this NFT will publicly link your wallet address to your on-chain identity,
-                    which may identify you as a Parity employee or contributor. Your email address will
-                    <strong className="text-yellow-100"> never be stored</strong> with the mint record
+                    Minting this NFT to your account will identify you as a Parity employee or contributor. Your email address will
+                    <strong className="text-yellow-100"> not be stored</strong> with the mint record
                     and remains private.
                   </p>
                 </div>
