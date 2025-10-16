@@ -1,9 +1,13 @@
 #!/usr/bin/env tsx
 // Import whitelist from the whitelist file
 
+import { config } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { getDb, addToWhitelist } from '../src/lib/db';
+
+// Load environment variables from .env.local
+config({ path: '.env.local' });
 
 const WHITELIST_FILE = path.join(process.cwd(), 'whitelist');
 

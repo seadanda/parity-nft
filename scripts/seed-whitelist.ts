@@ -7,7 +7,11 @@
  *   npm run db:seed          # Add test emails (preserves existing)
  */
 
+import { config } from 'dotenv';
 import { createClient, type Client } from '@libsql/client';
+
+// Load environment variables from .env.local
+config({ path: '.env.local' });
 
 function getDbClient(): Client {
   const url = process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL;

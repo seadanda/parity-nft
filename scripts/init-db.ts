@@ -8,7 +8,11 @@
  *   npm run db:init --drop # Drop and recreate all tables
  */
 
+import { config } from 'dotenv';
 import { createClient, type Client } from '@libsql/client';
+
+// Load environment variables from .env.local
+config({ path: '.env.local' });
 
 const args = process.argv.slice(2);
 const shouldDrop = args.includes('--drop') || args.includes('--reset');
