@@ -44,11 +44,25 @@ async function initializeTables() {
       category TEXT,
       notes TEXT,
       has_minted INTEGER NOT NULL DEFAULT 0,
+      minting_state TEXT NOT NULL DEFAULT 'idle',
+      minting_started_at TEXT,
       added_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       added_by TEXT
     )
   `);
   await db.execute('CREATE INDEX IF NOT EXISTS idx_whitelist_email ON whitelist(email)');
+
+  // Migration: Add minting_state columns if they don't exist
+  try {
+    await db.execute(`ALTER TABLE whitelist ADD COLUMN minting_state TEXT NOT NULL DEFAULT 'idle'`);
+  } catch (e) {
+    // Column already exists, ignore
+  }
+  try {
+    await db.execute(`ALTER TABLE whitelist ADD COLUMN minting_started_at TEXT`);
+  } catch (e) {
+    // Column already exists, ignore
+  }
 
   // Verification codes table
   // Only one active code per email - new requests overwrite old ones
@@ -274,6 +288,225 @@ export async function validateSession(token: string): Promise<{ email: string; n
 // Mint record queries
 // Note: We check hasEmailMinted via whitelist table
 // mint_records intentionally does NOT store email for privacy
+
+/**
+ * Atomically check if email can mint and lock it for minting
+ * Returns true if successfully locked, false if already minted or locked
+ *
+ * States:
+ * - 'idle': Not minting, can start
+ * - 'minting': Currently minting (locked)
+ * - 'completed': Mint finished successfully
+ * - 'failed': Mint failed, can retry after timeout
+ */
+export async function tryLockForMinting(email: string): Promise<{ success: boolean; reason?: string }> {
+  const db = getDb();
+
+  // Atomically check and update in a single query
+  // This prevents race conditions between checking and locking
+  const result = await db.execute({
+    sql: `
+      UPDATE whitelist
+      SET
+        minting_state = 'minting',
+        minting_started_at = CURRENT_TIMESTAMP
+      WHERE LOWER(email) = LOWER(?)
+        AND has_minted = 0
+        AND (
+          minting_state = 'idle'
+          OR minting_state = 'failed'
+          OR (minting_state = 'minting' AND datetime(minting_started_at, '+10 minutes') < datetime('now'))
+        )
+    `,
+    args: [email]
+  });
+
+  if (result.rowsAffected === 0) {
+    // Check why it failed
+    const checkResult = await db.execute({
+      sql: 'SELECT has_minted, minting_state, minting_started_at FROM whitelist WHERE LOWER(email) = LOWER(?)',
+      args: [email]
+    });
+
+    if (checkResult.rows.length === 0) {
+      return { success: false, reason: 'Not whitelisted' };
+    }
+
+    const row = checkResult.rows[0] as any;
+    if (row.has_minted === 1) {
+      return { success: false, reason: 'Already minted' };
+    }
+    if (row.minting_state === 'minting') {
+      return { success: false, reason: 'Mint already in progress' };
+    }
+
+    return { success: false, reason: 'Unknown error' };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Mark minting as completed
+ */
+export async function completeMinting(email: string) {
+  const db = getDb();
+  await db.execute({
+    sql: `UPDATE whitelist SET minting_state = 'completed', has_minted = 1 WHERE LOWER(email) = LOWER(?)`,
+    args: [email]
+  });
+}
+
+/**
+ * Mark minting as failed (allows retry)
+ */
+export async function failMinting(email: string) {
+  const db = getDb();
+  await db.execute({
+    sql: `UPDATE whitelist SET minting_state = 'failed' WHERE LOWER(email) = LOWER(?)`,
+    args: [email]
+  });
+}
+
+/**
+ * Check if a wallet address owns any NFT in the collection on-chain
+ */
+async function checkNFTOwnershipOnChain(walletAddress: string, collectionId: number): Promise<{ hasNFT: boolean; nftId?: number }> {
+  try {
+    const { createClient } = await import("polkadot-api");
+    const { getVercelWsProvider } = await import("./ws-provider-vercel");
+    const { dot } = await import("@polkadot-api/descriptors");
+
+    const rpcEndpoint = process.env.RPC_ENDPOINT || 'wss://polkadot-asset-hub-rpc.polkadot.io';
+    const provider = await getVercelWsProvider(rpcEndpoint);
+    const client = createClient(provider);
+    const api = client.getTypedApi(dot);
+
+    console.log(`[cleanup] Checking on-chain ownership for ${walletAddress} in collection ${collectionId}`);
+
+    // Query collection items to find any owned by this address
+    const items = await api.query.Nfts.Item.getEntries(collectionId);
+
+    for (const item of items) {
+      const itemId = item.keyArgs[1]; // [collectionId, itemId]
+      const itemData = item.value;
+
+      if (itemData && itemData.owner === walletAddress) {
+        console.log(`[cleanup] Found NFT #${itemId} owned by ${walletAddress}`);
+        client.destroy();
+        return { hasNFT: true, nftId: itemId };
+      }
+    }
+
+    console.log(`[cleanup] No NFT found for ${walletAddress}`);
+    client.destroy();
+    return { hasNFT: false };
+  } catch (error) {
+    console.error('[cleanup] Error checking NFT ownership:', error);
+    // On error, assume they don't have it (safer for preventing double mint)
+    return { hasNFT: false };
+  }
+}
+
+/**
+ * Reset stuck minting states (older than 10 minutes)
+ * IMPORTANT: Checks on-chain ownership before resetting!
+ * If NFT exists on-chain -> mark as completed (prevents data loss)
+ * If NFT doesn't exist -> reset to idle for retry
+ */
+export async function cleanupStuckMintingStates() {
+  const db = getDb();
+
+  // Find emails with stuck minting states
+  // We need to join with mint_records to get the wallet address they were trying to mint to
+  const stuckStates = await db.execute({
+    sql: `
+      SELECT
+        w.email,
+        w.minting_started_at,
+        (
+          SELECT mr.wallet_address
+          FROM mint_records mr
+          WHERE mr.minted_at >= datetime(w.minting_started_at, '-1 hour')
+          ORDER BY mr.minted_at DESC
+          LIMIT 1
+        ) as attempted_wallet
+      FROM whitelist w
+      WHERE w.minting_state = 'minting'
+        AND w.has_minted = 0
+        AND datetime(w.minting_started_at, '+10 minutes') < datetime('now')
+    `,
+    args: []
+  });
+
+  const rows = stuckStates.rows as any[];
+  console.log(`[cleanup] Found ${rows.length} stuck minting states`);
+
+  if (rows.length === 0) {
+    return { completed: 0, reset: 0 };
+  }
+
+  const collectionId = parseInt(process.env.COLLECTION_ID || '662');
+  let completedCount = 0;
+  let resetCount = 0;
+
+  for (const row of rows) {
+    const email = row.email;
+    const attemptedWallet = row.attempted_wallet;
+
+    if (!attemptedWallet) {
+      // Can't verify without wallet address, reset to idle
+      console.log(`[cleanup] No wallet found for ${email}, resetting to idle`);
+      await db.execute({
+        sql: `UPDATE whitelist SET minting_state = 'idle', minting_started_at = NULL WHERE LOWER(email) = LOWER(?)`,
+        args: [email]
+      });
+      resetCount++;
+      continue;
+    }
+
+    // Check on-chain if this wallet owns an NFT in the collection
+    const ownership = await checkNFTOwnershipOnChain(attemptedWallet, collectionId);
+
+    if (ownership.hasNFT) {
+      // Mint succeeded on-chain! Mark as completed
+      console.log(`[cleanup] ✅ Found on-chain NFT for ${email}, marking as completed`);
+      await completeMinting(email);
+
+      // Try to find and record the mint if not already recorded
+      const existingRecord = await db.execute({
+        sql: 'SELECT id FROM mint_records WHERE wallet_address = ? AND collection_id = ?',
+        args: [attemptedWallet, collectionId]
+      });
+
+      if (existingRecord.rows.length === 0 && ownership.nftId) {
+        console.log(`[cleanup] Recording discovered mint for ${email}`);
+        // We don't have all the metadata, but at least record the basics
+        await db.execute({
+          sql: `
+            INSERT INTO mint_records (wallet_address, collection_id, nft_id, hash, tier, rarity, minted_at)
+            VALUES (?, ?, ?, 'recovered', 'Unknown', 'Unknown', datetime('now'))
+          `,
+          args: [attemptedWallet, collectionId, ownership.nftId]
+        });
+      }
+
+      completedCount++;
+    } else {
+      // No NFT on-chain, safe to reset for retry
+      console.log(`[cleanup] ❌ No on-chain NFT for ${email}, resetting to idle`);
+      await db.execute({
+        sql: `UPDATE whitelist SET minting_state = 'idle', minting_started_at = NULL WHERE LOWER(email) = LOWER(?)`,
+        args: [email]
+      });
+      resetCount++;
+    }
+  }
+
+  console.log(`[cleanup] ✅ Completed: ${completedCount}, ♻️ Reset: ${resetCount}`);
+  return { completed: completedCount, reset: resetCount };
+}
+
 export async function hasEmailMinted(email: string): Promise<boolean> {
   const db = getDb();
   // Check if this email has minted via whitelist.has_minted flag

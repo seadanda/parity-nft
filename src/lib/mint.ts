@@ -6,7 +6,7 @@ import { sr25519CreateDerive } from "@polkadot-labs/hdkd"
 import { DEV_PHRASE, entropyToMiniSecret, mnemonicToEntropy, validateMnemonic, sr25519, ss58Address } from "@polkadot-labs/hdkd-helpers"
 import crypto from 'crypto';
 import { uploadJson, uploadFile } from 'pinata';
-import { isEmailWhitelisted, hasEmailMinted, recordMint } from './db';
+import { isEmailWhitelisted, hasEmailMinted, recordMint, tryLockForMinting, completeMinting, failMinting } from './db';
 import { calculateTierFromHash } from './tier-calculator';
 import fs from 'fs';
 import path from 'path';
@@ -83,8 +83,11 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
     throw new Error('Email not whitelisted');
   }
 
-  if (await hasEmailMinted(email)) {
-    throw new Error('Email already minted');
+  // Atomically check and lock for minting
+  // This prevents race conditions and double minting
+  const lockResult = await tryLockForMinting(email);
+  if (!lockResult.success) {
+    throw new Error(lockResult.reason || 'Cannot mint at this time');
   }
 
   // Validate configuration
@@ -343,9 +346,13 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
     // Execute transaction with asset manager signer
     console.log('[mint] Submitting transaction...');
 
-    const result = await new Promise<MintResult>((resolve, reject) => {
-      try {
-        const subscription = finalBatch.signSubmitAndWatch(assetManagerSigner).subscribe({
+    // Add timeout to prevent hanging forever
+    const TRANSACTION_TIMEOUT = 240000; // 4 minutes (less than Vercel's 5 min limit)
+
+    const result = await Promise.race([
+      new Promise<MintResult>((resolve, reject) => {
+        try {
+          const subscription = finalBatch.signSubmitAndWatch(assetManagerSigner).subscribe({
           next: (event: any) => {
           // Wait for finalization
           if (event.type === 'finalized') {
@@ -402,11 +409,15 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
           reject(err);
         }
       });
-      } catch (err: any) {
-        console.error('[mint] Failed to create subscription:', err);
-        reject(err);
-      }
-    });
+        } catch (err: any) {
+          console.error('[mint] Failed to create subscription:', err);
+          reject(err);
+        }
+      }),
+      new Promise<MintResult>((_, reject) =>
+        setTimeout(() => reject(new Error('Transaction timeout after 4 minutes')), TRANSACTION_TIMEOUT)
+      )
+    ]);
 
     // Record mint in database after transaction completes
     // Note: Email is NOT stored in mint_records for privacy
@@ -424,13 +435,21 @@ export async function mintNFT(email: string, recipientAddress: string, config: M
         result.metadataUrl,
         result.imageUrl
       );
-      console.log(`[mint] Mint recorded for ${email}, has_minted flag set`);
+      // Mark minting as completed
+      await completeMinting(email);
+      console.log(`[mint] Mint recorded for ${email}, state set to completed`);
     } catch (dbError) {
       console.error('Failed to record mint in database:', dbError);
-      // Don't fail the mint if database recording fails
+      // Mark as failed so they can retry
+      await failMinting(email);
+      throw new Error('Mint succeeded on-chain but database recording failed. Please contact support.');
     }
 
     return result;
+  } catch (error) {
+    // On any error during minting, mark as failed so user can retry
+    await failMinting(email);
+    throw error;
   } finally {
     if (client) {
       client.destroy();
