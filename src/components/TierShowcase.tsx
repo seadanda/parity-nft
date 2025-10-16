@@ -130,7 +130,7 @@ export default function TierShowcase() {
                 glowColor={tier.glowColor}
                 tierName={tier.name}
                 autoRotate={true}
-                loadHDR={false}
+                loadHDR={true}
               />
 
               {/* Fullscreen Button */}
