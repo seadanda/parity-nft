@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -94,12 +94,17 @@ export default function NFTCanvas({
       camera.position.set(0, 0, 5);
 
       // Renderer with black background for starfield
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      // Note: alpha: false is correct for opaque background with starfield
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: false,
+      });
       renderer.setSize(containerWidth, containerHeight);
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setClearColor(0x000000, 1); // Black background for stars
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.0;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
       container.appendChild(renderer.domElement);
 
       // Setup lighting
@@ -143,8 +148,8 @@ export default function NFTCanvas({
     }
 
     function loadHDREnvironment() {
-      const rgbeLoader = new RGBELoader();
-      rgbeLoader.load('/royal_esplanade_2k.hdr', function (texture) {
+      const hdrLoader = new HDRLoader();
+      hdrLoader.load('/royal_esplanade_2k.hdr', function (texture: any) {
         // Use PMREM to prefilter and gently blur the environment
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         pmremGenerator.compileEquirectangularShader();
@@ -152,7 +157,17 @@ export default function NFTCanvas({
         scene.environment = envRT.texture;
         texture.dispose();
         pmremGenerator.dispose();
-      }, undefined, function (error) {
+        console.log('HDR environment loaded successfully');
+
+        // Update materials after environment loads to ensure they pick up the environment
+        if (logoMesh) {
+          logoMesh.traverse(function (child: any) {
+            if (child.isMesh && child.material && !child.userData.isGlow && !child.userData.isIridescence) {
+              child.material.needsUpdate = true;
+            }
+          });
+        }
+      }, undefined, function (error: any) {
         console.error('Failed to load HDR environment:', error);
       });
     }

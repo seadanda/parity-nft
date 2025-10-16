@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 
 export default function HeroViewer() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -123,8 +123,8 @@ export default function HeroViewer() {
     }
 
     function loadHDREnvironment() {
-      const rgbeLoader = new RGBELoader();
-      rgbeLoader.load('/royal_esplanade_2k.hdr', function (texture) {
+      const hdrLoader = new HDRLoader();
+      hdrLoader.load('/royal_esplanade_2k.hdr', function (texture: any) {
         // Use PMREM to prefilter and gently blur the environment
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         pmremGenerator.compileEquirectangularShader();
@@ -132,7 +132,7 @@ export default function HeroViewer() {
         scene.environment = envRT.texture;
         texture.dispose();
         pmremGenerator.dispose();
-      }, undefined, function (error) {
+      }, undefined, function (error: any) {
         console.error('Failed to load HDR environment:', error);
       });
     }
