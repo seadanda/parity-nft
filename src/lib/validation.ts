@@ -11,12 +11,26 @@ const MIN_BALANCE_PLANCK = BigInt('1000000000'); // 0.1 DOT (10^9 planck = 0.1 D
 /**
  * Validates a Polkadot address (SS58 format with prefix 0)
  * Returns true if valid, false otherwise
+ * REJECTS Ethereum addresses (0x...)
  */
 export function isValidPolkadotAddress(address: string): boolean {
   try {
+    // Reject Ethereum addresses explicitly
+    if (address.startsWith('0x') || address.startsWith('0X')) {
+      console.warn('[validation] Rejecting Ethereum address:', address);
+      return false;
+    }
+
     // Decode the address to get the public key and prefix
     // ss58Decode returns a tuple: [payload: Uint8Array, prefix: number]
     const [payload, prefix] = ss58Decode(address);
+
+    // Only accept Polkadot prefix (0) or generic substrate (42)
+    // Reject Kusama (2), Ethereum, and other chains
+    if (prefix !== 0 && prefix !== 42) {
+      console.warn(`[validation] Rejecting address with non-Polkadot prefix ${prefix}:`, address);
+      return false;
+    }
 
     // Re-encode with Polkadot prefix (0) to verify format
     // This ensures the address is a valid Polkadot address (not Kusama, etc.)

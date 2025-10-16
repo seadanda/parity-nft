@@ -159,12 +159,67 @@ export async function getIdentity(accountId: string): Promise<IdentityInfo> {
  * @param accountIds - Array of Polkadot account addresses
  * @returns Map of accountId to display name
  */
+/**
+ * Validate if a string is a valid Polkadot address (not Ethereum!)
+ */
+async function isValidAddress(address: string): Promise<boolean> {
+  if (!address || typeof address !== 'string' || address.trim().length === 0) {
+    return false;
+  }
+
+  // Reject Ethereum addresses (0x prefix, 42 chars)
+  if (address.startsWith('0x') || address.startsWith('0X')) {
+    console.warn('[identity] Rejecting Ethereum address:', address);
+    return false;
+  }
+
+  // Basic SS58 format check (47-48 characters, valid base58 chars)
+  // Polkadot addresses start with '1', Kusama with capital letters
+  const ss58Regex = /^[1-9A-HJ-NP-Za-km-z]{47,48}$/;
+  if (!ss58Regex.test(address)) {
+    console.warn('[identity] Address failed SS58 format check:', address);
+    return false;
+  }
+
+  // Try to decode - if it throws, it's invalid
+  try {
+    const { ss58Decode } = await import('@polkadot-labs/hdkd-helpers');
+    const [, prefix] = ss58Decode(address);
+
+    // Only accept Polkadot prefix (0) or generic substrate (42)
+    // Reject Kusama (2) and Ethereum-style addresses
+    if (prefix !== 0 && prefix !== 42) {
+      console.warn(`[identity] Rejecting address with non-Polkadot prefix ${prefix}:`, address);
+      return false;
+    }
+
+    return true;
+  } catch (e) {
+    console.warn('[identity] Invalid address checksum:', address);
+    return false;
+  }
+}
+
 export async function getIdentitiesBatch(accountIds: string[]): Promise<Map<string, string>> {
   const results = new Map<string, string>();
 
-  // Check cache first
+  // Filter out invalid addresses and check cache
   const uncachedIds: string[] = [];
   for (const accountId of accountIds) {
+    // Skip empty or invalid addresses
+    if (!accountId || typeof accountId !== 'string' || accountId.trim().length === 0) {
+      console.warn('[identity] Skipping empty/invalid address:', accountId);
+      results.set(accountId, 'anon');
+      continue;
+    }
+
+    // Validate address format before proceeding (blocks Ethereum addresses)
+    if (!(await isValidAddress(accountId))) {
+      console.warn('[identity] Skipping invalid/non-Polkadot address:', accountId);
+      results.set(accountId, 'anon');
+      continue;
+    }
+
     const cached = identityCache.get(accountId);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       results.set(accountId, cached.display);
@@ -190,10 +245,15 @@ export async function getIdentitiesBatch(accountIds: string[]): Promise<Map<stri
     client = createClient(provider);
     const api = client.getTypedApi(people);
 
-    // Query all identities in parallel
-    const identityPromises = uncachedIds.map(accountId =>
-      api.query.Identity.IdentityOf.getValue(accountId)
-    );
+    // Query all identities in parallel with individual error handling
+    const identityPromises = uncachedIds.map(async (accountId) => {
+      try {
+        return await api.query.Identity.IdentityOf.getValue(accountId);
+      } catch (error) {
+        console.error('[identity] Error querying identity for', accountId, error);
+        return null; // Return null for failed queries
+      }
+    });
 
     const identities = await Promise.all(identityPromises);
 
