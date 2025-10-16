@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive 3D NFT visualization celebrating Parity's 10-year anniversary">
+    <title>Parity 10 Years - NFT Viewer</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./p5.min.js"></script>
+
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="container" role="main" aria-label="3D NFT Viewer"></div>
+    <canvas id="stampCanvas" aria-hidden="true" style="position:absolute;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:150;"></canvas>
+    <div id="main-content" style="position:absolute;clip:rect(1px,1px,1px,1px);height:1px;width:1px;overflow:hidden;" tabindex="-1">
+        <h1>Parity 10 Years NFT Visualization</h1>
+        <p id="nft-description">An interactive 3D visualization of a glass Parity logo NFT. This NFT is part of the Parity 10-year anniversary celebration.</p>
+        <p id="tier-info" aria-live="polite"></p>
+    </div>
+
+    <script src="sketch.js"></script>
+</body>
+</html>
