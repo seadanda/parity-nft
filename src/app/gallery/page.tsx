@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Copy, Filter, X } from 'lucide-react';
+import { Copy, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { calculateTierFromHash } from '@/lib/tier-calculator';
 import { useWallet } from '@/contexts/WalletContext';
 import { ss58Encode, ss58Decode } from '@polkadot-labs/hdkd-helpers';
@@ -24,23 +24,35 @@ interface NFTData {
   identity?: string; // Display name from People chain
 }
 
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
 export default function GalleryPage() {
   const { selectedAccount } = useWallet();
   const [nfts, setNfts] = useState<NFTData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterAddress, setFilterAddress] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     async function fetchNFTs() {
+      setLoading(true);
       try {
-        const response = await fetch('/api/mints/recent');
+        const response = await fetch(`/api/mints/recent?page=${currentPage}&limit=20`);
         const data = await response.json();
 
         if (data.success) {
           // The API now includes identity data for each mint
           setNfts(data.mints);
+          setPagination(data.pagination);
         } else {
           setError(data.error || 'Failed to load NFTs');
         }
@@ -53,7 +65,7 @@ export default function GalleryPage() {
     }
 
     fetchNFTs();
-  }, []);
+  }, [currentPage]);
 
   // Static starfield background
   useEffect(() => {
@@ -308,18 +320,73 @@ export default function GalleryPage() {
               </div>
             )}
 
+            {/* Pagination */}
+            {!loading && !error && pagination && pagination.totalPages > 1 && (
+              <div className="mt-12 flex justify-center items-center gap-4">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </button>
+
+                <div className="flex items-center gap-2">
+                  {/* Show page numbers */}
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (pagination.totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-10 h-10 rounded-lg transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-pink-500 text-white'
+                            : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(pagination.totalPages, p + 1))}
+                  disabled={currentPage === pagination.totalPages}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             {/* Stats */}
-            {!loading && !error && nfts.length > 0 && (
-              <div className="mt-12 text-center">
+            {!loading && !error && pagination && (
+              <div className="mt-6 text-center">
                 <p className="text-gray-400">
                   {filterAddress ? (
                     <>
                       Showing <span className="text-white font-semibold">{filteredNfts.length}</span> of{' '}
-                      <span className="text-white font-semibold">{nfts.length}</span> total
+                      <span className="text-white font-semibold">{pagination.total}</span> total
                     </>
                   ) : (
                     <>
-                      Total Minted: <span className="text-white font-semibold">{nfts.length}</span>
+                      Showing <span className="text-white font-semibold">{(currentPage - 1) * pagination.limit + 1}</span>-
+                      <span className="text-white font-semibold">{Math.min(currentPage * pagination.limit, pagination.total)}</span> of{' '}
+                      <span className="text-white font-semibold">{pagination.total}</span> total minted
                     </>
                   )}
                 </p>

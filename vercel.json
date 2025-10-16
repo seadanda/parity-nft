@@ -4,6 +4,9 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "functions": {
+    "src/app/api/mint/route.ts": {
+      "maxDuration": 300
+    },
     "src/app/api/**/*.ts": {
       "maxDuration": 60
     }
