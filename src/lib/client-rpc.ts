@@ -22,17 +22,65 @@ const MIN_BALANCE_PLANCK = BigInt('1000000000'); // 0.1 DOT
 /**
  * Decode identity data field
  */
-function decodeIdentityData(field: any): string {
-  if (!field || !field.value) return '';
+function decodeIdentityData(data: any): string {
+  if (!data) return 'anon';
 
-  if (field.type === 'Raw' && field.value) {
-    if (typeof field.value === 'string') return field.value;
-    if (field.value instanceof Uint8Array) {
-      return new TextDecoder().decode(field.value);
+  // Handle None type
+  if (data.type === 'None') {
+    return 'anon';
+  }
+
+  // Handle Raw types (Raw0, Raw1, ... Raw32)
+  if (data.type && data.type.startsWith('Raw') && data.value) {
+    const value = data.value;
+
+    // PAPI's FixedSizeBinary has helper methods
+    if (typeof value.asText === 'function') {
+      try {
+        const text = value.asText();
+        return text || 'anon';
+      } catch (e) {
+        console.warn('[client-rpc] Error calling asText():', e);
+      }
+    }
+
+    // Try asBytes() if asText() didn't work
+    if (typeof value.asBytes === 'function') {
+      try {
+        const bytes = value.asBytes();
+        if (bytes instanceof Uint8Array) {
+          return new TextDecoder().decode(bytes);
+        }
+      } catch (e) {
+        console.warn('[client-rpc] Error calling asBytes():', e);
+      }
+    }
+
+    // If value is directly a Uint8Array
+    if (value instanceof Uint8Array) {
+      return new TextDecoder().decode(value);
+    }
+
+    // If value is already a string
+    if (typeof value === 'string') {
+      return value;
     }
   }
 
-  return String(field.value || '');
+  // Handle if data is directly a Uint8Array
+  if (data instanceof Uint8Array) {
+    return new TextDecoder().decode(data);
+  }
+
+  // Handle if data is a string
+  if (typeof data === 'string') {
+    return data;
+  }
+
+  // Debug: log the actual structure if we can't decode it
+  console.warn('[client-rpc] Unknown identity data structure:', JSON.stringify(data, null, 2));
+
+  return 'anon';
 }
 
 //
@@ -41,7 +89,6 @@ function decodeIdentityData(field: any): string {
 
 /**
  * Get identity display name for a single address
- * Runs in browser, no backend call!
  */
 export async function getIdentity(address: string): Promise<{ display: string; hasIdentity: boolean }> {
   // Check cache first
@@ -167,7 +214,6 @@ export async function getIdentitiesBatch(addresses: string[]): Promise<Map<strin
 
 /**
  * Check account balance (>= 0.1 DOT)
- * Runs in browser, no backend call!
  */
 export async function checkAccountBalance(
   address: string
