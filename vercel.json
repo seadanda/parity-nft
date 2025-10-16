@@ -6,11 +6,14 @@
   "functions": {
     "src/app/api/mint/route.ts": {
       "maxDuration": 300
-    },
-    "src/app/api/**/*.ts": {
-      "maxDuration": 60
     }
   },
+  "crons": [
+    {
+      "path": "/api/cleanup",
+      "schedule": "0 * * * *"
+    }
+  ],
   "regions": ["iad1"],
   "env": {
     "NODE_OPTIONS": "--max-old-space-size=4096"

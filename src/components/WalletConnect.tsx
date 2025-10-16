@@ -48,30 +48,25 @@ export default function WalletConnect() {
     }
   }, [isConnected, accounts, selectedAccount]);
 
-  // Fetch identities for all connected accounts
+  // Fetch identities for all connected accounts - using client-side RPC
   useEffect(() => {
     if (isConnected && accounts.length > 0) {
       const fetchIdentities = async () => {
         try {
           const addresses = accounts.map(acc => acc.address);
-          const response = await fetch('/api/identity', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ addresses })
+
+          // Use client-side batch identity lookup (free!)
+          const { getIdentitiesBatch } = await import('@/lib/client-rpc');
+          const identitiesMap = await getIdentitiesBatch(addresses);
+
+          // Convert Map to address-keyed object
+          const identityMap: Record<string, IdentityData> = {};
+          identitiesMap.forEach((display, address) => {
+            if (display && display !== 'anon') {
+              identityMap[address] = { display };
+            }
           });
-
-          const data = await response.json();
-
-          if (data.success && data.identities) {
-            // Convert array of identities to address-keyed object
-            const identityMap: Record<string, IdentityData> = {};
-            data.identities.forEach((identity: { address: string; display?: string }) => {
-              if (identity.display) {
-                identityMap[identity.address] = { display: identity.display };
-              }
-            });
-            setIdentities(identityMap);
-          }
+          setIdentities(identityMap);
         } catch (err) {
           console.error('Failed to fetch identities:', err);
         }

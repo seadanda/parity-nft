@@ -37,22 +37,16 @@ export default function NFTViewer({ hash, metadata }: NFTViewerProps) {
 
   const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/view/${hash}`;
 
-  // Fetch owner identity on mount
+  // Fetch owner identity on mount - using client-side RPC
   useEffect(() => {
     if (metadata.owner) {
       setLoadingIdentity(true);
-      fetch('/api/identity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: metadata.owner })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            setOwnerIdentity(data.identity.display);
-          } else {
-            setOwnerIdentity('anon');
-          }
+
+      // Import dynamically to avoid server-side issues
+      import('@/lib/client-rpc')
+        .then(({ getIdentity }) => getIdentity(metadata.owner!))
+        .then(identity => {
+          setOwnerIdentity(identity.display);
         })
         .catch(err => {
           console.error('Failed to fetch owner identity:', err);

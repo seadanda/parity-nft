@@ -166,34 +166,16 @@ export default function MintForm() {
       setMintStatus('validating');
       await new Promise(resolve => setTimeout(resolve, 200));
 
-      // Status: Checking identity
+      // Status: Checking identity - using client-side RPC
       setMintStatus('checking_identity');
-      const identityResponse = await fetch('/api/identity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: data.walletAddress })
-      });
-      const identityData = await identityResponse.json();
-      if (identityData.success) {
-        setIdentityName(identityData.identity.display);
-      } else {
-        setIdentityName('anon');
-      }
+      const { getIdentity } = await import('@/lib/client-rpc');
+      const identity = await getIdentity(data.walletAddress);
+      setIdentityName(identity.display);
 
-      // Status: Checking balance - actual RPC call
+      // Status: Checking balance - using client-side RPC
       setMintStatus('checking_balance');
-      const balanceCheckResponse = await fetch('/api/check-balance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: data.walletAddress })
-      });
-
-      if (!balanceCheckResponse.ok) {
-        const balanceError = await balanceCheckResponse.json();
-        throw new Error(balanceError.error || 'Failed to check balance');
-      }
-
-      const { hasBalance, balance } = await balanceCheckResponse.json();
+      const { checkAccountBalance } = await import('@/lib/client-rpc');
+      const { hasBalance, balance } = await checkAccountBalance(data.walletAddress);
       setAccountBalance(balance); // Store balance for display
 
       if (!hasBalance) {
