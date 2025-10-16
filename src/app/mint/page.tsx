@@ -27,18 +27,6 @@ export default function MintPage() {
               </h1>
             </div>
 
-            {/* Minting Not Live Warning */}
-            <Card className="border-amber-500/50 bg-amber-500/10">
-              <div className="flex items-center gap-3 px-3 py-2">
-                <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm text-amber-200/90">
-                    <span className="font-semibold">Minting Not Yet Live:</span> The minting period has not started yet.
-                  </p>
-                </div>
-              </div>
-            </Card>
-
             <MintForm />
           </div>
         </div>
