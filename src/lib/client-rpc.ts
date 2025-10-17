@@ -15,8 +15,15 @@ import { people, dot } from '@polkadot-api/descriptors';
 const identityCache = new Map<string, { display: string; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-const PEOPLE_CHAIN_RPC = 'wss://polkadot-people-rpc.polkadot.io';
-const POLKADOT_RPC = 'wss://polkadot-rpc.polkadot.io';
+// Use environment variables for RPC endpoints (client-side uses NEXT_PUBLIC_ prefix)
+const PEOPLE_CHAIN_RPC = typeof window !== 'undefined'
+  ? (process.env.NEXT_PUBLIC_PEOPLE_CHAIN_RPC || 'wss://polkadot-people-rpc.polkadot.io')
+  : 'wss://polkadot-people-rpc.polkadot.io';
+
+const ASSET_HUB_RPC = typeof window !== 'undefined'
+  ? (process.env.NEXT_PUBLIC_RPC_ENDPOINT || 'wss://polkadot-asset-hub-rpc.polkadot.io')
+  : 'wss://polkadot-asset-hub-rpc.polkadot.io';
+
 const MIN_BALANCE_PLANCK = BigInt('1000000000'); // 0.1 DOT
 
 /**
@@ -221,7 +228,7 @@ export async function checkAccountBalance(
   let client: ReturnType<typeof createClient> | null = null;
 
   try {
-    const provider = getWsProvider(POLKADOT_RPC);
+    const provider = getWsProvider(ASSET_HUB_RPC);
     client = createClient(provider);
     const api = client.getTypedApi(dot);
 
