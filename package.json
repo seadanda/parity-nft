@@ -48,7 +48,7 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.545.0",
     "next": "^15.5.9",
-    "nodemailer": "^8.0.4",
+    "nodemailer": "^10.6.0",
     "pinata": "^2.5.1",
     "polkadot-api": "^1.20.0",
     "react": "19.1.0",
@@ -72,6 +72,6 @@
     "eslint-config-next": "15.5.4",
     "tsx": "^4.20.6",
     "typescript": "^5",
-    "vitest": "^3.2.4"
+    "vitest": "^5.1.1"
   }
 }
